@@ -118,7 +118,7 @@ export default function AssistantPage() {
   ]
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-56px)] lg:h-[100dvh] bg-gradient-to-b from-slate-50 to-white">
+    <div className="flex flex-col h-full min-h-0 bg-gradient-to-b from-slate-50 to-white">
       {/* 顶部标题栏 - 固定高度 */}
       <header className="flex-shrink-0 h-14 md:h-16 bg-white/90 backdrop-blur-lg border-b border-slate-100 px-4 flex items-center gap-3">
         <div className="relative">
@@ -235,8 +235,8 @@ export default function AssistantPage() {
         </div>
       </div>
 
-      {/* 底部输入区域 - 固定高度 */}
-      <footer className="flex-shrink-0 bg-white/95 backdrop-blur-lg border-t border-slate-100 px-3 md:px-4 py-2.5 md:py-3">
+      {/* 底部输入区域 - 固定高度，为底部导航栏留空间 */}
+      <footer className="flex-shrink-0 bg-white/95 backdrop-blur-lg border-t border-slate-100 px-3 md:px-4 py-2.5 md:py-3 mb-16 lg:mb-0">
         <div className="flex items-end gap-2 max-w-3xl mx-auto">
           {/* 附件按钮 */}
           <button 
