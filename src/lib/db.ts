@@ -108,18 +108,26 @@ export async function getWeeklyStats(): Promise<WeeklyStat[]> {
 }
 
 export async function createWeeklyStat(stat: Omit<WeeklyStat, 'id' | 'created_at'>): Promise<WeeklyStat> {
-  if (isSupabaseConfigured() && supabase) {
+  const useSupabase = isSupabaseConfigured() && supabase
+  console.log('[DB] createWeeklyStat - using:', useSupabase ? 'Supabase' : 'localStorage')
+  
+  if (useSupabase && supabase) {
     const { data, error } = await supabase
       .from('weekly_stats')
       .insert(stat)
       .select()
       .single()
     
-    if (error) throw error
+    if (error) {
+      console.error('[DB] Supabase insert error:', error)
+      throw error
+    }
+    console.log('[DB] Saved to Supabase:', data)
     return data
   }
   
   // localStorage 降级
+  console.log('[DB] Falling back to localStorage')
   const stats = await getWeeklyStats()
   const newStat: WeeklyStat = {
     ...stat,

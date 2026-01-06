@@ -3,6 +3,15 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+// 调试：打印配置状态
+if (typeof window !== 'undefined') {
+  console.log('[Supabase Config]', {
+    urlConfigured: !!supabaseUrl,
+    keyConfigured: !!supabaseAnonKey,
+    url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'NOT SET'
+  })
+}
+
 // 类型定义
 export interface Note {
   id?: string
