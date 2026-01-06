@@ -1,11 +1,14 @@
 @import "tailwindcss";
 
 /* ============================================
-   🏝️ 小离岛岛 · 御姐风运营系统
-   Design: Bento Grid + Soft UI + Aurora
+   小离岛岛 · 御姐风运营系统
+   Design: 微信风格 + 苹方字体 + Soft UI
    ============================================ */
 
 :root {
+  /* ===== 苹方字体系统 ===== */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Source Han Sans CN', 'Noto Sans CJK SC', sans-serif;
+  
   /* ===== 主色调 - 御姐玫粉系 ===== */
   --primary-50: #FDF2F8;
   --primary-100: #FCE7F3;
@@ -30,6 +33,15 @@
   --accent-500: #14B8A6;
   --accent-600: #0D9488;
   
+  /* ===== 微信风格颜色 ===== */
+  --wechat-green: #95ec69;
+  --wechat-blue: #576b95;
+  --wechat-bg: #ededed;
+  --wechat-text: #1a1a1a;
+  --wechat-secondary: #999999;
+  --wechat-muted: #b0b0b0;
+  --wechat-placeholder: #c0c0c0;
+  
   /* ===== 背景色 - 温暖奶白 ===== */
   --bg-warm: #FFFBF7;
   --bg-rose: #FFF1F5;
@@ -37,7 +49,7 @@
   --bg-card: #FFFFFF;
   
   /* ===== 文字色 ===== */
-  --text-primary: #1E293B;
+  --text-primary: #1a1a1a;
   --text-secondary: #64748B;
   --text-muted: #94A3B8;
   
@@ -68,7 +80,13 @@
 @theme inline {
   --color-background: var(--bg-warm);
   --color-foreground: var(--text-primary);
-  --font-sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+  --font-sans: var(--font-sans);
+}
+
+/* ===== 全局字体平滑 ===== */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ===== 基础样式 ===== */
@@ -76,11 +94,38 @@ body {
   background: linear-gradient(135deg, var(--bg-warm) 0%, var(--bg-rose) 50%, var(--bg-purple) 100%);
   background-attachment: fixed;
   color: var(--text-primary);
-  font-family: 'Noto Sans SC', 'Inter', system-ui, -apple-system, sans-serif;
-  font-feature-settings: 'kern' 1, 'liga' 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
   min-height: 100vh;
+}
+
+/* ===== 微信风格字体细节 ===== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+p {
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+/* ===== 输入框字体 ===== */
+input, textarea, select {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+/* ===== 按钮字体 ===== */
+button {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 /* ===== 滚动条美化 ===== */
@@ -282,7 +327,7 @@ select:focus {
 
 /* 安全区域适配 */
 .pb-safe {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
 .pt-safe {
