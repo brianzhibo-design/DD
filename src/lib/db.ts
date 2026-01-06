@@ -1,5 +1,8 @@
 import { supabase, WeeklyStat, Note, CatRecord } from './supabase'
 
+// 重新导出类型供页面使用
+export type { WeeklyStat, Note, CatRecord }
+
 // ============ 周数据统计 ============
 
 // 获取所有周统计数据

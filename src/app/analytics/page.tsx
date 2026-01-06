@@ -1,15 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { getWeeklyStats, saveWeeklyStat, deleteWeeklyStat } from '@/lib/db'
-import { WeeklyStat } from '@/lib/supabase'
-import { BarChart3, TrendingUp, Users, Heart, Bookmark, MessageCircle, Eye, PlusCircle, Trash2, AlertTriangle, X } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { 
+  BarChart3, 
+  TrendingUp, 
+  Users, 
+  Heart, 
+  Star, 
+  MessageCircle, 
+  Eye, 
+  Plus, 
+  Calendar,
+  AlertCircle,
+  X,
+  PieChart,
+  Trash2
+} from 'lucide-react';
+import { getWeeklyStats, saveWeeklyStat, deleteWeeklyStat, WeeklyStat } from '@/lib/db';
 
 export default function AnalyticsPage() {
-  const [stats, setStats] = useState<WeeklyStat[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [stats, setStats] = useState<WeeklyStat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     week_start: '',
     week_end: '',
@@ -21,340 +34,410 @@ export default function AnalyticsPage() {
     views: 0,
     posts_count: 0,
     female_ratio: 85
-  })
+  });
 
-  // 加载数据
   useEffect(() => {
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   const loadData = async () => {
-    setLoading(true)
-    console.log('[Analytics] Loading data from Supabase...')
-    const data = await getWeeklyStats()
-    console.log('[Analytics] Loaded', data.length, 'records')
-    setStats(data)
-    setLoading(false)
-  }
-
-  // 计算关键指标
-  const latestStat = stats[0]
-  const totalInteractions = latestStat 
-    ? latestStat.likes + latestStat.saves + latestStat.comments 
-    : 0
-  const interactionRate = latestStat?.views 
-    ? ((totalInteractions / latestStat.views) * 100).toFixed(2) 
-    : '0'
-  const saveRate = latestStat?.views 
-    ? ((latestStat.saves / latestStat.views) * 100).toFixed(2) 
-    : '0'
-
-  // 保存数据
-  const handleSubmit = async () => {
-    if (!formData.week_start || !formData.week_end) {
-      alert('请填写日期范围')
-      return
+    setLoading(true);
+    try {
+      const data = await getWeeklyStats();
+      setStats(data);
+      console.log('✅ 从Supabase加载数据:', data.length, '条');
+    } catch (error) {
+      console.error('加载失败:', error);
     }
-    
-    setSaving(true)
-    console.log('[Analytics] Saving to Supabase:', formData)
-    
-    const result = await saveWeeklyStat(formData)
-    
-    if (result) {
-      console.log('[Analytics] Saved successfully:', result)
-      setShowModal(false)
-      loadData()
-      setFormData({
-        week_start: '',
-        week_end: '',
-        followers: 0,
-        new_followers: 0,
-        likes: 0,
-        saves: 0,
-        comments: 0,
-        views: 0,
-        posts_count: 0,
-        female_ratio: 85
-      })
-    } else {
-      alert('保存失败，请检查控制台')
-    }
-    setSaving(false)
-  }
+    setLoading(false);
+  };
 
-  // 删除数据
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    
+    try {
+      const result = await saveWeeklyStat(formData);
+      if (result) {
+        setShowModal(false);
+        await loadData();
+        setFormData({
+          week_start: '',
+          week_end: '',
+          followers: 0,
+          new_followers: 0,
+          likes: 0,
+          saves: 0,
+          comments: 0,
+          views: 0,
+          posts_count: 0,
+          female_ratio: 85
+        });
+      } else {
+        alert('保存失败，请检查网络连接');
+      }
+    } catch (error) {
+      console.error('保存错误:', error);
+      alert('保存失败');
+    }
+    setSaving(false);
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm('确定删除这条记录？')) return
-    
-    const success = await deleteWeeklyStat(id)
+    if (!confirm('确定要删除这条记录吗？')) return;
+    const success = await deleteWeeklyStat(id);
     if (success) {
-      loadData()
+      await loadData();
     }
-  }
+  };
+
+  const latestStat = stats[0];
+  const totalInteractions = latestStat ? latestStat.likes + latestStat.saves + latestStat.comments : 0;
+  const interactionRate = latestStat?.views ? ((totalInteractions / latestStat.views) * 100).toFixed(2) : '0';
+  const saveRate = latestStat?.views ? ((latestStat.saves / latestStat.views) * 100).toFixed(2) : '0';
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* 页面标题 */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
+      {/* 顶部导航区 */}
+      <div className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <BarChart3 size={24} className="text-pink-500" />
+          <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+            <BarChart3 className="text-pink-500 w-8 h-8" />
             数据分析
           </h1>
-          <p className="text-gray-500">追踪运营数据，分析内容表现（数据存储在 Supabase）</p>
+          <p className="text-slate-500 mt-1">深度追踪运营趋势，驱动内容增长</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+          className="inline-flex items-center justify-center gap-2 bg-pink-500 hover:bg-pink-600 active:scale-95 transition-all text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg shadow-pink-200"
         >
-          <PlusCircle size={18} />
-          录入本周数据
+          <Plus size={18} />
+          录入数据
         </button>
       </div>
 
-      {/* 警告提示 */}
-      {latestStat && latestStat.female_ratio < 60 && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-6 flex items-start gap-3">
-          <AlertTriangle size={20} className="mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-medium">女性粉丝占比 {latestStat.female_ratio}%，低于60%警戒线</p>
-            <p className="text-sm mt-1">建议增加猫咪日常和女性向生活内容，减少纯颜值展示</p>
-          </div>
-        </div>
-      )}
-
-      {/* 核心数据卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-        <DataCard icon={<Users size={24} className="text-blue-500" />} label="新增粉丝" value={latestStat?.new_followers || 0} prefix="+" />
-        <DataCard icon={<Heart size={24} className="text-red-500" />} label="点赞数" value={latestStat?.likes || 0} />
-        <DataCard icon={<Bookmark size={24} className="text-amber-500" />} label="收藏数" value={latestStat?.saves || 0} />
-        <DataCard icon={<MessageCircle size={24} className="text-green-500" />} label="评论数" value={latestStat?.comments || 0} />
-        <DataCard icon={<Eye size={24} className="text-purple-500" />} label="浏览量" value={latestStat?.views || 0} />
-        <DataCard icon={<Users size={24} className="text-pink-500" />} label="女粉占比" value={`${latestStat?.female_ratio || 0}%`} highlight={latestStat && latestStat.female_ratio < 70} />
-      </div>
-
-      {/* 关键指标 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h3 className="font-bold mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-pink-500" />
-            关键指标
-          </h3>
-          <div className="space-y-4">
-            <MetricRow 
-              label="收藏率（核心指标）" 
-              value={`${saveRate}%`}
-              hint="小红书核心指标，建议>5%"
-              isGood={Number(saveRate) >= 5}
-            />
-            <MetricRow 
-              label="互动率" 
-              value={`${interactionRate}%`}
-              hint="(点赞+收藏+评论) / 浏览量"
-              isGood={Number(interactionRate) >= 10}
-            />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <h3 className="font-bold mb-4 flex items-center gap-2">
-            <Users size={18} className="text-pink-500" />
-            粉丝性别分布
-          </h3>
-          <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className="absolute h-full bg-gradient-to-r from-pink-400 to-pink-500 transition-all" 
-              style={{ width: `${latestStat?.female_ratio || 0}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-3 text-sm">
-            <span className="text-pink-500 font-medium">女性 {latestStat?.female_ratio || 0}%</span>
-            <span className="text-blue-500 font-medium">男性 {100 - (latestStat?.female_ratio || 0)}%</span>
-          </div>
-          {latestStat && latestStat.female_ratio < 75 && (
-            <p className="text-xs text-amber-600 mt-2">目标: 女粉占比 ≥ 75%</p>
-          )}
-        </div>
-      </div>
-
-      {/* 历史数据表格 */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border">
-        <h3 className="font-bold mb-4">历史数据</h3>
-        {loading ? (
-          <p className="text-gray-500 text-center py-8">加载中...</p>
-        ) : stats.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">暂无数据</p>
-            <button 
-              onClick={() => setShowModal(true)}
-              className="text-pink-500 hover:underline"
-            >
-              点击录入第一条数据
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-gray-500 border-b text-sm">
-                  <th className="pb-3 font-medium">周期</th>
-                  <th className="pb-3 font-medium">新增粉丝</th>
-                  <th className="pb-3 font-medium">点赞</th>
-                  <th className="pb-3 font-medium">收藏</th>
-                  <th className="pb-3 font-medium">评论</th>
-                  <th className="pb-3 font-medium">浏览量</th>
-                  <th className="pb-3 font-medium">女粉占比</th>
-                  <th className="pb-3 font-medium">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.map((stat, index) => (
-                  <tr key={stat.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="py-3">
-                      <span className="text-sm">{stat.week_start} ~ {stat.week_end}</span>
-                      {index === 0 && (
-                        <span className="ml-2 text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded">最新</span>
-                      )}
-                    </td>
-                    <td className="py-3 text-green-600">+{stat.new_followers}</td>
-                    <td className="py-3">{stat.likes}</td>
-                    <td className="py-3">{stat.saves}</td>
-                    <td className="py-3">{stat.comments}</td>
-                    <td className="py-3">{stat.views}</td>
-                    <td className={`py-3 ${stat.female_ratio < 70 ? 'text-red-500' : 'text-pink-500'}`}>
-                      {stat.female_ratio}%
-                    </td>
-                    <td className="py-3">
-                      <button 
-                        onClick={() => stat.id && handleDelete(stat.id)}
-                        className="text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* 预警提示 */}
+        {latestStat && latestStat.female_ratio < 60 && (
+          <div className="bg-orange-50 border border-orange-200 p-4 rounded-2xl flex items-start gap-3">
+            <AlertCircle className="text-orange-500 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-bold text-orange-800">女性粉丝占比偏低 ({latestStat.female_ratio}%)</h4>
+              <p className="text-orange-700 text-sm mt-0.5">
+                当前低于 60% 警戒线。建议增加更具亲和力的"猫咪日常"或"精致生活"笔记，弱化硬核颜值展示。
+              </p>
+            </div>
           </div>
         )}
+
+        {/* 核心指标卡片组 */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <StatCard icon={<Users className="text-blue-500" />} label="新增粉丝" value={latestStat?.new_followers || 0} />
+          <StatCard icon={<Heart className="text-red-500" />} label="点赞数" value={latestStat?.likes || 0} />
+          <StatCard icon={<Star className="text-yellow-500" />} label="收藏数" value={latestStat?.saves || 0} />
+          <StatCard icon={<MessageCircle className="text-green-500" />} label="评论数" value={latestStat?.comments || 0} />
+          <StatCard icon={<Eye className="text-purple-500" />} label="浏览量" value={latestStat?.views || 0} />
+          <StatCard icon={<TrendingUp className="text-pink-500" />} label="女粉占比" value={`${latestStat?.female_ratio || 0}%`} />
+        </div>
+
+        {/* 中间深度分析层 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 指标分析 */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <PieChart className="text-pink-500" size={20} />
+                效率评估
+              </h3>
+              <span className="text-xs text-slate-400 font-medium px-2 py-1 bg-slate-50 rounded-md">最新一周期</span>
+            </div>
+            <div className="space-y-6">
+              <ProgressBar 
+                label="收藏率 (核心指标)" 
+                value={saveRate} 
+                target={5} 
+                hint="反映内容的实用价值，建议 >5%" 
+              />
+              <ProgressBar 
+                label="互动率 (转粉潜力)" 
+                value={interactionRate} 
+                target={10} 
+                hint="反映粉丝活跃度，建议 >10%" 
+              />
+            </div>
+          </div>
+
+          {/* 性别比例可视化 */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
+              <Users className="text-pink-500" size={20} />
+              粉丝性别画像
+            </h3>
+            <div className="flex items-center gap-4 h-24">
+              <div className="flex-1">
+                <div className="flex justify-between mb-2 text-sm font-bold">
+                  <span className="text-pink-500">女性 {latestStat?.female_ratio || 0}%</span>
+                  <span className="text-blue-500">男性 {100 - (latestStat?.female_ratio || 0)}%</span>
+                </div>
+                <div className="relative h-4 w-full bg-blue-100 rounded-full overflow-hidden flex">
+                  <div 
+                    className="h-full bg-pink-500 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(236,72,153,0.3)]"
+                    style={{ width: `${latestStat?.female_ratio || 0}%` }}
+                  />
+                </div>
+                <div className="mt-4 flex gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-pink-500" />
+                    <span className="text-xs text-slate-500">目标受众</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-xs text-slate-500">自然流量</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-24 h-24 shrink-0 rounded-2xl bg-slate-50 flex items-center justify-center border-4 border-white shadow-inner">
+                <div className="text-center">
+                   <p className="text-xs text-slate-400">指数</p>
+                   <p className="text-lg font-black text-pink-600">
+                     {(latestStat?.female_ratio || 0) >= 80 ? 'A+' : (latestStat?.female_ratio || 0) >= 60 ? 'A' : 'B'}
+                   </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 历史记录列表 */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+            <h3 className="font-bold text-lg">历史趋势数据</h3>
+            <span className="text-xs text-slate-400">共 {stats.length} 条记录</span>
+          </div>
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="p-12 text-center text-slate-400">加载数据中...</div>
+            ) : stats.length === 0 ? (
+              <div className="p-20 text-center space-y-4">
+                <div className="inline-block p-4 bg-slate-50 rounded-full text-slate-300">
+                  <BarChart3 size={40} />
+                </div>
+                <p className="text-slate-400">目前还没有数据，开始录入第一笔吧！</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-slate-50/50">
+                  <tr className="text-left text-slate-500 text-sm uppercase tracking-wider">
+                    <th className="px-6 py-4 font-semibold">统计周期</th>
+                    <th className="px-6 py-4 font-semibold text-center">总粉丝</th>
+                    <th className="px-6 py-4 font-semibold text-center">新增</th>
+                    <th className="px-6 py-4 font-semibold text-center">互动(点/收/评)</th>
+                    <th className="px-6 py-4 font-semibold text-center">女粉比</th>
+                    <th className="px-6 py-4 font-semibold">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {stats.map((stat) => (
+                    <tr key={stat.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-700">{stat.week_start}</span>
+                          <span className="text-xs text-slate-400 font-normal italic">至 {stat.week_end}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="text-sm font-bold text-slate-600">{stat.followers.toLocaleString()}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-bold">
+                          +{stat.new_followers}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-3 text-xs">
+                          <span className="flex items-center gap-1 text-red-400 font-medium"><Heart size={10} />{stat.likes}</span>
+                          <span className="flex items-center gap-1 text-yellow-500 font-medium"><Star size={10} />{stat.saves}</span>
+                          <span className="flex items-center gap-1 text-blue-400 font-medium"><MessageCircle size={10} />{stat.comments}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`text-sm font-bold ${stat.female_ratio >= 60 ? 'text-pink-500' : 'text-slate-400'}`}>
+                          {stat.female_ratio}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button 
+                          onClick={() => handleDelete(stat.id!)}
+                          className="text-slate-300 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 录入弹窗 */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-lg shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold">录入本周数据</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div className="px-6 py-5 border-b flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-xl font-bold text-slate-800">录入周度运营数据</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={24} />
               </button>
             </div>
             
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <InputField label="开始日期" type="date" value={formData.week_start} 
-                  onChange={(v) => setFormData({...formData, week_start: v})} />
-                <InputField label="结束日期" type="date" value={formData.week_end}
-                  onChange={(v) => setFormData({...formData, week_end: v})} />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <InputField label="总粉丝数" type="number" value={formData.followers}
-                  onChange={(v) => setFormData({...formData, followers: Number(v)})} />
-                <InputField label="新增粉丝" type="number" value={formData.new_followers}
-                  onChange={(v) => setFormData({...formData, new_followers: Number(v)})} />
+            <form onSubmit={handleSubmit} className="p-6 max-h-[80vh] overflow-y-auto">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <InputItem 
+                    label="开始日期" 
+                    type="date" 
+                    value={formData.week_start} 
+                    onChange={v => setFormData({...formData, week_start: v})}
+                    icon={<Calendar size={14} />}
+                  />
+                  <InputItem 
+                    label="结束日期" 
+                    type="date" 
+                    value={formData.week_end} 
+                    onChange={v => setFormData({...formData, week_end: v})}
+                    icon={<Calendar size={14} />}
+                  />
+                </div>
+
+                <div className="p-4 bg-blue-50/50 rounded-2xl space-y-4 border border-blue-100">
+                  <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest">粉丝指标</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputItem label="总粉丝数" type="number" value={formData.followers} onChange={v => setFormData({...formData, followers: Number(v)})} />
+                    <InputItem label="本周新增" type="number" value={formData.new_followers} onChange={v => setFormData({...formData, new_followers: Number(v)})} />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-red-50/50 rounded-2xl space-y-4 border border-red-100">
+                  <h4 className="text-xs font-bold text-red-600 uppercase tracking-widest">互动详情</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <InputItem label="点赞数" type="number" value={formData.likes} onChange={v => setFormData({...formData, likes: Number(v)})} />
+                    <InputItem label="收藏数" type="number" value={formData.saves} onChange={v => setFormData({...formData, saves: Number(v)})} />
+                    <InputItem label="评论数" type="number" value={formData.comments} onChange={v => setFormData({...formData, comments: Number(v)})} />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-2xl space-y-4 border border-slate-200">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">其他表现</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <InputItem label="总浏览量 (PV)" type="number" value={formData.views} onChange={v => setFormData({...formData, views: Number(v)})} />
+                    </div>
+                    <InputItem label="发布篇数" type="number" value={formData.posts_count} onChange={v => setFormData({...formData, posts_count: Number(v)})} />
+                  </div>
+                  <InputItem 
+                    label="女性粉丝占比 (%)" 
+                    type="range" 
+                    min={0}
+                    max={100}
+                    value={formData.female_ratio} 
+                    onChange={v => setFormData({...formData, female_ratio: Number(v)})} 
+                  />
+                  <div className="text-center text-lg font-black text-pink-500">{formData.female_ratio}%</div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <InputField label="点赞数" type="number" value={formData.likes}
-                  onChange={(v) => setFormData({...formData, likes: Number(v)})} />
-                <InputField label="收藏数" type="number" value={formData.saves}
-                  onChange={(v) => setFormData({...formData, saves: Number(v)})} />
-                <InputField label="评论数" type="number" value={formData.comments}
-                  onChange={(v) => setFormData({...formData, comments: Number(v)})} />
+              <div className="flex gap-4 mt-8">
+                <button 
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 py-3 px-4 border border-slate-200 font-bold rounded-2xl text-slate-600 hover:bg-slate-50"
+                >
+                  取消
+                </button>
+                <button 
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 py-3 px-4 bg-pink-500 text-white font-bold rounded-2xl hover:bg-pink-600 shadow-lg shadow-pink-200 disabled:opacity-50"
+                >
+                  {saving ? '保存中...' : '确认保存'}
+                </button>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <InputField label="浏览量" type="number" value={formData.views}
-                  onChange={(v) => setFormData({...formData, views: Number(v)})} />
-                <InputField label="发布笔记数" type="number" value={formData.posts_count}
-                  onChange={(v) => setFormData({...formData, posts_count: Number(v)})} />
-              </div>
-
-              <InputField label="女粉占比 (%)" type="number" value={formData.female_ratio}
-                onChange={(v) => setFormData({...formData, female_ratio: Number(v)})} />
-            </div>
-
-            <div className="flex gap-4 mt-6">
-              <button 
-                onClick={() => setShowModal(false)} 
-                className="flex-1 px-4 py-2.5 border rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                取消
-              </button>
-              <button 
-                onClick={handleSubmit}
-                disabled={saving}
-                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {saving ? '保存中...' : '保存到 Supabase'}
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
-// 数据卡片组件
-function DataCard({ icon, label, value, prefix = '', highlight = false }: { 
-  icon: React.ReactNode, 
-  label: string, 
-  value: number | string, 
-  prefix?: string,
-  highlight?: boolean 
-}) {
+// 统计卡片组件
+function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string, value: number | string }) {
   return (
-    <div className={`bg-white p-4 rounded-xl shadow-sm border ${highlight ? 'border-red-300 bg-red-50' : ''}`}>
-      <div className="mb-2">{icon}</div>
-      <div className="text-gray-500 text-sm">{label}</div>
-      <div className={`text-xl font-bold ${highlight ? 'text-red-500' : ''}`}>{prefix}{value}</div>
-    </div>
-  )
-}
-
-// 指标行组件
-function MetricRow({ label, value, hint, isGood }: { label: string, value: string, hint: string, isGood: boolean }) {
-  return (
-    <div>
-      <div className="flex justify-between">
-        <span className="text-gray-700">{label}</span>
-        <span className={`font-bold ${isGood ? 'text-green-500' : 'text-red-500'}`}>{value}</span>
+    <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+      <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center mb-3">
+        {icon}
       </div>
-      <p className="text-xs text-gray-400 mt-1">{hint}</p>
+      <div className="text-slate-400 text-xs font-medium uppercase tracking-wider">{label}</div>
+      <div className="text-2xl font-black mt-1 text-slate-800">
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </div>
     </div>
-  )
+  );
+}
+
+// 进度条组件
+function ProgressBar({ label, value, target, hint }: { label: string, value: string, target: number, hint: string }) {
+  const numValue = Number(value);
+  const isHealthy = numValue >= target;
+  
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-end">
+        <div>
+          <span className="text-sm font-bold text-slate-700">{label}</span>
+          <p className="text-[10px] text-slate-400">{hint}</p>
+        </div>
+        <div className={`text-lg font-black ${isHealthy ? 'text-green-500' : 'text-orange-500'}`}>
+          {value}%
+        </div>
+      </div>
+      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+        <div 
+          className={`h-full transition-all duration-1000 ${isHealthy ? 'bg-green-500' : 'bg-orange-500'}`}
+          style={{ width: `${Math.min(numValue * 5, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 // 输入框组件
-function InputField({ label, type, value, onChange }: { 
+function InputItem({ label, type, value, onChange, icon, ...props }: { 
   label: string, 
   type: string, 
   value: string | number, 
-  onChange: (v: string) => void 
+  onChange: (v: string) => void,
+  icon?: React.ReactNode,
+  min?: number,
+  max?: number
 }) {
   return (
-    <div>
-      <label className="text-sm text-gray-500 block mb-1">{label}</label>
-      <input 
+    <div className="w-full">
+      <label className="text-xs font-bold text-slate-500 mb-1.5 block px-1 flex items-center gap-1">
+        {icon}
+        {label}
+      </label>
+      <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 outline-none"
+        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all shadow-sm"
+        {...props}
       />
     </div>
-  )
+  );
 }
