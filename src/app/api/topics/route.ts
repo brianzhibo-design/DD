@@ -47,7 +47,7 @@ ${context ? `\n当前数据背景：\n${context}` : ''}
 只返回JSON数组，不要其他内容。`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     });
