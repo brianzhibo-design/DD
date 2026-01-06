@@ -21,6 +21,8 @@ export default function CatsPage() {
     setLoading(true);
     try {
       const dbCats = await getCats();
+      console.log('[Cats] Loaded from DB:', dbCats);
+      
       if (dbCats.length > 0) {
         // 合并数据库数据和初始数据
         const mergedCats = initialCats.map(cat => {
@@ -28,10 +30,9 @@ export default function CatsPage() {
           if (dbCat) {
             return {
               ...cat,
+              dbId: dbCat.id, // 保存数据库ID
               personality: dbCat.personality || cat.personality,
-              traits: dbCat.traits || cat.traits,
               appearance: dbCat.color || cat.appearance,
-              notes: dbCat.breed || cat.notes,
             };
           }
           return cat;
@@ -39,30 +40,38 @@ export default function CatsPage() {
         setCats(mergedCats);
       }
     } catch (error) {
-      console.error('Failed to load cats:', error);
+      console.error('[Cats] Failed to load:', error);
     }
     setLoading(false);
   };
   
   const handleSaveCat = async (updatedCat: Cat) => {
     try {
-      // 查找对应的数据库记录
-      const dbCats = await getCats();
-      const dbCat = dbCats.find((c: CatRecord) => c.name === updatedCat.name);
+      // 使用保存的数据库ID，或重新查找
+      let dbId = (updatedCat as Cat & { dbId?: string }).dbId;
       
-      if (dbCat && dbCat.id) {
-        await updateCat(dbCat.id, {
-          personality: updatedCat.personality,
-          traits: updatedCat.traits,
-          color: updatedCat.appearance,
+      if (!dbId) {
+        const dbCats = await getCats();
+        const dbCat = dbCats.find((c: CatRecord) => c.name === updatedCat.name);
+        dbId = dbCat?.id;
+      }
+      
+      if (dbId) {
+        // 只更新数据库中存在的字段
+        const result = await updateCat(dbId, {
+          personality: updatedCat.personality || '',
+          color: updatedCat.appearance || '',
         });
+        console.log('[Cats] Update result:', result);
+      } else {
+        console.error('[Cats] No DB record found for:', updatedCat.name);
       }
       
       // 更新本地状态
       setCats(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
       setEditingCat(null);
     } catch (error) {
-      console.error('Failed to save cat:', error);
+      console.error('[Cats] Failed to save:', error);
     }
   };
   

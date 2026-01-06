@@ -45,16 +45,13 @@ export interface Note {
   updated_at?: string
 }
 
+// 与数据库表结构匹配的猫咪记录
 export interface CatRecord {
   id?: string
   name: string
-  breed?: string
-  color?: string
   gender?: string
-  age?: string
+  color?: string
   personality?: string
-  traits?: string[]
-  photo_url?: string
   appearance_count?: number
   created_at?: string
   updated_at?: string

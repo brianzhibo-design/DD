@@ -68,10 +68,8 @@ export function getCatProfilesContext(): string {
   return cachedCats.map(cat => {
     const info = [`${cat.name}`]
     if (cat.gender) info.push(`(${cat.gender})`)
-    if (cat.breed) info.push(`品种：${cat.breed}`)
     if (cat.color) info.push(`毛色：${cat.color}`)
     if (cat.personality) info.push(`性格：${cat.personality}`)
-    if (cat.traits?.length) info.push(`特点：${cat.traits.join('、')}`)
     return info.join(' | ')
   }).join('\n')
 }
