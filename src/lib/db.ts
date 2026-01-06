@@ -30,13 +30,15 @@ export async function getLatestWeeklyStat(): Promise<WeeklyStat | null> {
     .select('*')
     .order('week_start', { ascending: false })
     .limit(1)
-    .single()
 
+  // 表为空时不是错误，只是没有数据
   if (error) {
     console.error('[DB] getLatestWeeklyStat error:', error)
     return null
   }
-  return data
+  
+  // 返回第一条数据，如果没有则返回null
+  return data && data.length > 0 ? data[0] : null
 }
 
 // 保存周统计数据
