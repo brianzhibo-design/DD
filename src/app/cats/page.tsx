@@ -1,40 +1,80 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Cat as CatIcon, Lightbulb, Sparkles } from 'lucide-react';
+import { Cat as CatIcon, Lightbulb, Sparkles, Loader2 } from 'lucide-react';
 import { initialCats, Cat } from '@/data/cats';
-import { getCatAppearances, getCatProfiles, saveCatProfile } from '@/lib/storage';
+import { getCats, updateCat } from '@/lib/db';
+import { CatRecord } from '@/lib/supabase';
 import CatCard from '@/components/CatCard';
 import CatProfileEditor from '@/components/CatProfileEditor';
 
 export default function CatsPage() {
   const [cats, setCats] = useState<Cat[]>(initialCats);
-  const [appearances, setAppearances] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
   const [editingCat, setEditingCat] = useState<Cat | null>(null);
   
   useEffect(() => {
-    // 加载保存的猫咪档案
-    const savedProfiles = getCatProfiles();
-    const mergedCats = initialCats.map(cat => {
-      const saved = savedProfiles.find(p => p.id === cat.id);
-      return saved ? { ...cat, ...saved } : cat;
-    });
-    setCats(mergedCats);
-    
-    // 加载出镜统计
-    setAppearances(getCatAppearances());
+    loadCats();
   }, []);
+
+  const loadCats = async () => {
+    setLoading(true);
+    try {
+      const dbCats = await getCats();
+      if (dbCats.length > 0) {
+        // 合并数据库数据和初始数据
+        const mergedCats = initialCats.map(cat => {
+          const dbCat = dbCats.find((c: CatRecord) => c.name === cat.name);
+          if (dbCat) {
+            return {
+              ...cat,
+              personality: dbCat.personality || cat.personality,
+              traits: dbCat.traits || cat.traits,
+              appearance: dbCat.color || cat.appearance,
+              notes: dbCat.breed || cat.notes,
+            };
+          }
+          return cat;
+        });
+        setCats(mergedCats);
+      }
+    } catch (error) {
+      console.error('Failed to load cats:', error);
+    }
+    setLoading(false);
+  };
   
-  const handleSaveCat = (updatedCat: Cat) => {
-    // 保存到localStorage
-    saveCatProfile(updatedCat);
-    
-    // 更新状态
-    setCats(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
-    setEditingCat(null);
+  const handleSaveCat = async (updatedCat: Cat) => {
+    try {
+      // 查找对应的数据库记录
+      const dbCats = await getCats();
+      const dbCat = dbCats.find((c: CatRecord) => c.name === updatedCat.name);
+      
+      if (dbCat && dbCat.id) {
+        await updateCat(dbCat.id, {
+          personality: updatedCat.personality,
+          traits: updatedCat.traits,
+          color: updatedCat.appearance,
+        });
+      }
+      
+      // 更新本地状态
+      setCats(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
+      setEditingCat(null);
+    } catch (error) {
+      console.error('Failed to save cat:', error);
+    }
   };
   
   const completedCount = cats.filter(c => c.personality || (c.traits && c.traits.length > 0)).length;
+  
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto flex items-center justify-center py-20">
+        <Loader2 size={32} className="animate-spin text-pink-500" />
+      </div>
+    );
+  }
   
   return (
     <div className="max-w-6xl mx-auto">
@@ -73,7 +113,7 @@ export default function CatsPage() {
           <CatCard
             key={cat.id}
             cat={cat}
-            appearances={appearances[cat.name] || 0}
+            appearances={0}
             onEdit={() => setEditingCat(cat)}
           />
         ))}
@@ -104,4 +144,3 @@ export default function CatsPage() {
     </div>
   );
 }
-

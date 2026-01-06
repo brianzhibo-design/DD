@@ -3,21 +3,31 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Cat, BarChart3, Lightbulb, MessageCircle, TrendingUp, Users, Heart, Bookmark, 
+  Cat, BarChart3, Lightbulb, TrendingUp, Users, Heart, Bookmark, 
   Sparkles, ArrowUpRight, Shirt, Palette, Gift, CheckCircle2, Plus, Palmtree,
-  PieChart, Bot
+  PieChart, Bot, Loader2
 } from 'lucide-react';
-import { getLatestWeeklyData, getCatAppearances, WeeklyData } from '@/lib/storage';
+import { getLatestWeeklyStat } from '@/lib/db';
+import { WeeklyStat } from '@/lib/supabase';
 import { initialCats } from '@/data/cats';
 
 export default function Home() {
-  const [weeklyData, setWeeklyData] = useState<WeeklyData | null>(null);
-  const [catAppearances, setCatAppearances] = useState<Record<string, number>>({});
+  const [weeklyData, setWeeklyData] = useState<WeeklyStat | null>(null);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    setWeeklyData(getLatestWeeklyData());
-    setCatAppearances(getCatAppearances());
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    try {
+      const data = await getLatestWeeklyStat();
+      setWeeklyData(data);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    }
+    setLoading(false);
+  };
 
   const quickLinks = [
     { href: '/analytics', label: '数据分析', icon: BarChart3, gradient: 'from-rose-400 via-pink-500 to-rose-600', desc: '追踪运营数据趋势' },
@@ -90,28 +100,34 @@ export default function Home() {
       
       {/* Stats Grid - Bento Style */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: '本周粉丝', value: weeklyData?.followers ? `+${weeklyData.followers}` : '--', icon: Users, iconBg: 'bg-pink-100', iconColor: 'text-pink-500' },
-          { label: '本周点赞', value: weeklyData?.likes?.toLocaleString() || '--', icon: Heart, iconBg: 'bg-rose-100', iconColor: 'text-rose-500' },
-          { label: '本周收藏', value: weeklyData?.saves?.toLocaleString() || '--', icon: Bookmark, iconBg: 'bg-amber-100', iconColor: 'text-amber-500' },
-          { label: '女粉占比', value: weeklyData?.femaleRatio ? `${weeklyData.femaleRatio}%` : '--', icon: TrendingUp, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-500', alert: weeklyData?.femaleRatio && weeklyData.femaleRatio < 60 },
-        ].map((stat, i) => (
-          <div key={i} className="bento-card group">
-            <div className="flex items-center gap-3 mb-3">
-              <div className={`w-10 h-10 ${stat.iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                <stat.icon size={20} className={stat.iconColor} />
-              </div>
-              <p className="text-sm text-gray-500">{stat.label}</p>
-            </div>
-            <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-            {stat.alert && (
-              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                低于80%警戒线
-              </p>
-            )}
+        {loading ? (
+          <div className="col-span-4 flex justify-center py-8">
+            <Loader2 size={24} className="animate-spin text-pink-500" />
           </div>
-        ))}
+        ) : (
+          [
+            { label: '本周粉丝', value: weeklyData?.new_followers ? `+${weeklyData.new_followers}` : '--', icon: Users, iconBg: 'bg-pink-100', iconColor: 'text-pink-500' },
+            { label: '本周点赞', value: weeklyData?.likes?.toLocaleString() || '--', icon: Heart, iconBg: 'bg-rose-100', iconColor: 'text-rose-500' },
+            { label: '本周收藏', value: weeklyData?.saves?.toLocaleString() || '--', icon: Bookmark, iconBg: 'bg-amber-100', iconColor: 'text-amber-500' },
+            { label: '女粉占比', value: weeklyData?.female_ratio ? `${weeklyData.female_ratio}%` : '--', icon: TrendingUp, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-500', alert: weeklyData?.female_ratio && weeklyData.female_ratio < 60 },
+          ].map((stat, i) => (
+            <div key={i} className="bento-card group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-10 h-10 ${stat.iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                  <stat.icon size={20} className={stat.iconColor} />
+                </div>
+                <p className="text-sm text-gray-500">{stat.label}</p>
+              </div>
+              <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+              {stat.alert && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                  低于60%警戒线
+                </p>
+              )}
+            </div>
+          ))
+        )}
       </div>
       
       {/* Quick Links - Bento Grid */}
