@@ -45,7 +45,7 @@ export default function AnalyticsPage() {
     try {
       const data = await getWeeklyStats();
       setStats(data);
-      console.log('✅ 从Supabase加载数据:', data.length, '条');
+      console.log('[DB] 从Supabase加载数据:', data.length, '条');
     } catch (error) {
       console.error('加载失败:', error);
     }

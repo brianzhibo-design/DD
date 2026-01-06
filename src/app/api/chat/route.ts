@@ -44,7 +44,7 @@ function buildContextPrompt(data: { notes: any[], weeklyStats: any[], cats: any[
   // 周数据摘要
   if (data.weeklyStats.length > 0) {
     const latest = data.weeklyStats[0]
-    context += `\n📊 最新运营数据（${latest.week_start}）：
+    context += `\n[数据] 最新运营数据（${latest.week_start}）：
 - 粉丝：${latest.followers}，本周新增：${latest.new_followers}
 - 互动：点赞${latest.likes}、收藏${latest.saves}、评论${latest.comments}
 - 浏览量：${latest.views}
@@ -62,7 +62,7 @@ function buildContextPrompt(data: { notes: any[], weeklyStats: any[], cats: any[
       totalCollects += n.collects || 0
     })
 
-    context += `\n📝 历史笔记分析（共${data.notes.length}篇）：
+    context += `\n[笔记] 历史笔记分析（共${data.notes.length}篇）：
 - 内容分布：${Object.entries(byType).map(([k, v]) => `${k}${v}篇`).join('、')}
 - 平均点赞：${Math.round(totalLikes / data.notes.length)}
 - 平均收藏：${Math.round(totalCollects / data.notes.length)}\n`
@@ -70,18 +70,18 @@ function buildContextPrompt(data: { notes: any[], weeklyStats: any[], cats: any[
     // 表现最好的笔记
     const top = [...data.notes].sort((a, b) => (b.collects + b.likes) - (a.collects + a.likes)).slice(0, 3)
     if (top.length > 0) {
-      context += `\n🔥 表现最好的笔记：\n`
+      context += `\n[热门] 表现最好的笔记：\n`
       top.forEach((n: any, i: number) => {
         context += `${i + 1}. 「${n.title}」(${n.type}) - 点赞${n.likes} 收藏${n.collects}\n`
       })
     }
   } else {
-    context += `\n📝 暂无历史笔记数据\n`
+    context += `\n[笔记] 暂无历史笔记数据\n`
   }
 
   // 猫咪信息
   if (data.cats.length > 0) {
-    context += `\n🐱 猫咪档案（${data.cats.length}只）：\n`
+    context += `\n[猫咪] 猫咪档案（${data.cats.length}只）：\n`
     data.cats.forEach((cat: any) => {
       const info = [cat.name]
       if (cat.gender) info.push(`${cat.gender}`)
