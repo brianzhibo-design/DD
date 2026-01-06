@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
 const ANALYSIS_PROMPT = `你是一个信息提取助手。用户会描述他们的猫咪，请从描述中提取结构化信息。
 
 要求：
@@ -22,11 +18,23 @@ const ANALYSIS_PROMPT = `你是一个信息提取助手。用户会描述他们�
 用户描述：`;
 
 export async function POST(request: NextRequest) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!apiKey) {
+    console.error('ANTHROPIC_API_KEY is not set');
+    return NextResponse.json(
+      { success: false, error: 'ANTHROPIC_API_KEY未配置' },
+      { status: 500 }
+    );
+  }
+
+  const anthropic = new Anthropic({ apiKey });
+
   try {
     const { description, catName } = await request.json();
     
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20250929",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
       messages: [{ 
         role: "user", 

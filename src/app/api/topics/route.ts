@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
 export async function POST(request: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!apiKey) {
+    console.error('ANTHROPIC_API_KEY is not set');
     return NextResponse.json(
       { error: 'ANTHROPIC_API_KEY未配置' },
       { status: 500 }
     );
   }
+
+  const anthropic = new Anthropic({ apiKey });
 
   try {
     const { category = '穿搭', count = 5, context = '' } = await request.json();
@@ -46,7 +47,7 @@ ${context ? `\n当前数据背景：\n${context}` : ''}
 只返回JSON数组，不要其他内容。`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20250929',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     });

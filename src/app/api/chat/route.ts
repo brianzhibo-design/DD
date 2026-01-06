@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
 const SYSTEM_PROMPT = `你是"小离岛岛"的小红书运营AI助手，基于完整的战略规划提供专业建议。
 
 ## 关于岛岛
@@ -79,12 +75,20 @@ const SYSTEM_PROMPT = `你是"小离岛岛"的小红书运营AI助手，基于�
 
 export async function POST(request: NextRequest) {
   // 检查API Key是否配置
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!apiKey) {
+    console.error('ANTHROPIC_API_KEY is not set');
     return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY未配置，请在Vercel环境变量中设置' },
+      { error: 'ANTHROPIC_API_KEY未配置，请在环境变量中设置' },
       { status: 500 }
     );
   }
+
+  // 在函数内部初始化客户端，确保环境变量已加载
+  const anthropic = new Anthropic({
+    apiKey: apiKey,
+  });
 
   try {
     const { message, context, history = [] } = await request.json();
@@ -108,7 +112,7 @@ export async function POST(request: NextRequest) {
     ];
     
     const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20250929",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 2048,
       system: systemPrompt,
       messages,
