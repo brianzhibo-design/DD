@@ -48,32 +48,53 @@ export default function TopicsPage() {
   const generateTopics = async () => {
     setIsGenerating(true);
     setError(null);
+    setTopics([]); // 清空之前的结果
     
     try {
       console.log('[Topics] Requesting topics for:', { category, season });
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 55000); // 55秒超时
       
       const res = await fetch('/api/topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, season }),
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        setError(errorData.error || `请求失败 (${res.status})`);
+        return;
+      }
       
       const data = await res.json();
       console.log('[Topics] API Response:', data);
       
-      if (data.error) {
+      if (data.error && !data.topics?.length) {
         setError(data.error);
         return;
       }
       
-      if (data.topics && Array.isArray(data.topics)) {
+      if (data.topics && Array.isArray(data.topics) && data.topics.length > 0) {
         setTopics(data.topics);
+      } else if (data.raw) {
+        // 如果有原始内容但解析失败
+        setError('AI返回格式异常，请重试');
+        console.log('[Topics] Raw content:', data.raw);
       } else {
-        setError('返回格式错误');
+        setError('未能生成选题，请重试');
       }
     } catch (err) {
       console.error('[Topics] Generate error:', err);
-      setError('网络错误，请重试');
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('请求超时，AI正在思考中，请稍后重试');
+      } else {
+        setError('网络错误，请检查连接后重试');
+      }
     } finally {
       setIsGenerating(false);
     }
