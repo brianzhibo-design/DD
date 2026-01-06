@@ -9,11 +9,12 @@ import {
   TrendingUp, 
   Lightbulb, 
   PenTool, 
-  Heart,
+  Cat,
   AlertCircle,
   RefreshCw,
   Copy,
-  Check
+  Check,
+  Zap
 } from 'lucide-react'
 
 // ============================================
@@ -57,7 +58,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     gradient: 'from-emerald-500 to-teal-400'
   },
   { 
-    icon: <Heart className="w-5 h-5" />, 
+    icon: <Cat className="w-5 h-5" />, 
     label: '猫咪创意', 
     prompt: '推荐几个让猫咪自然出镜的创意拍摄方案',
     gradient: 'from-pink-500 to-rose-400'
@@ -221,9 +222,12 @@ export default function AssistantPage() {
             </div>
 
             {/* 欢迎文案 */}
-            <h2 className="text-[22px] lg:text-[26px] font-bold text-gray-900 mb-2">
-              你好，岛岛 ✨
-            </h2>
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="text-[22px] lg:text-[26px] font-bold text-gray-900">
+                你好，岛岛
+              </h2>
+              <Zap className="w-6 h-6 text-amber-400" />
+            </div>
             <p className="text-[14px] lg:text-[15px] text-gray-500 mb-8 text-center max-w-xs">
               我是你的专属 AI 运营助手，已接入账号历史数据
             </p>
