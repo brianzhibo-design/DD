@@ -1,83 +1,79 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Loader2, Copy, Check, Cat, ShoppingBag, Home, Shirt, Lightbulb, Palette, Info } from 'lucide-react';
-import { getAnalyticsContext, getCatAppearanceContext, getCatProfilesContext } from '@/lib/storage';
+import { Sparkles, Loader2, Copy, Check, Lightbulb, Info, TrendingUp, Star, Clock } from 'lucide-react';
 
 interface Topic {
   title: string;
-  type: 'outfit' | 'makeup' | 'product' | 'lifestyle' | 'cat';
-  cats: string[];
-  outline: string;
   tags: string[];
+  difficulty: '简单' | '中等' | '复杂';
+  potential: '高' | '中' | '低';
+  reason: string;
+  outline: string[];
 }
 
-const typeConfig = {
-  outfit: { label: '穿搭', icon: Shirt, color: 'bg-rose-100 text-rose-700', iconColor: 'text-rose-500' },
-  makeup: { label: '妆容', icon: Palette, color: 'bg-pink-100 text-pink-700', iconColor: 'text-pink-500' },
-  product: { label: '好物', icon: ShoppingBag, color: 'bg-amber-100 text-amber-700', iconColor: 'text-amber-500' },
-  lifestyle: { label: '生活', icon: Home, color: 'bg-purple-100 text-purple-700', iconColor: 'text-purple-500' },
-  cat: { label: '猫咪', icon: Cat, color: 'bg-blue-100 text-blue-700', iconColor: 'text-blue-500' },
+const categories = [
+  { value: '穿搭', label: '穿搭OOTD' },
+  { value: '妆容', label: '氛围感妆容' },
+  { value: '好物', label: '好物种草' },
+  { value: '生活', label: '生活日常' },
+];
+
+const seasons = [
+  { value: '通用', label: '通用' },
+  { value: '春夏', label: '春夏' },
+  { value: '秋冬', label: '秋冬' },
+];
+
+const difficultyConfig = {
+  '简单': { color: 'bg-green-100 text-green-700', icon: '🟢' },
+  '中等': { color: 'bg-yellow-100 text-yellow-700', icon: '🟡' },
+  '复杂': { color: 'bg-red-100 text-red-700', icon: '🔴' },
+};
+
+const potentialConfig = {
+  '高': { color: 'bg-rose-100 text-rose-700', stars: 3 },
+  '中': { color: 'bg-amber-100 text-amber-700', stars: 2 },
+  '低': { color: 'bg-gray-100 text-gray-700', stars: 1 },
 };
 
 export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const [category, setCategory] = useState('穿搭');
+  const [season, setSeason] = useState('通用');
+  const [error, setError] = useState<string | null>(null);
   
   const generateTopics = async () => {
     setIsGenerating(true);
+    setError(null);
     
     try {
-      const context = `
-运营数据：
-${getAnalyticsContext()}
-
-猫咪出镜情况：
-${getCatAppearanceContext()}
-
-猫咪档案：
-${getCatProfilesContext()}
-      `;
+      console.log('[Topics] Requesting topics for:', { category, season });
       
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: `根据以下数据，为小红书账号"小离岛岛"（御姐风穿搭博主）生成10个内容选题。
-
-要求：
-1. 核心定位：御姐风穿搭 × 氛围感美妆 × 精致生活
-2. 内容配比：穿搭OOTD约40%、氛围感妆容约25%、好物种草约20%、生活氛围约15%（猫咪可偶尔出镜）
-3. 风格要求：御姐、气质、高级感，不要甜腻
-4. 结合当前季节和热点
-5. 标题要有吸引力，符合小红书风格
-
-请用JSON数组格式返回，每个选题包含：
-{
-  "title": "完整的笔记标题",
-  "type": "outfit或makeup或product或lifestyle或cat",
-  "cats": ["如果有猫咪出镜，填写猫咪名字，否则为空数组"],
-  "outline": "内容大纲，3-5点，用换行分隔",
-  "tags": ["标签1", "标签2", "标签3"]
-}
-
-只返回JSON数组，不要其他内容。`,
-          context
-        }),
+        body: JSON.stringify({ category, season }),
       });
       
       const data = await res.json();
+      console.log('[Topics] API Response:', data);
       
-      // 解析JSON
-      const jsonMatch = data.response?.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        setTopics(parsed);
+      if (data.error) {
+        setError(data.error);
+        return;
       }
-    } catch (error) {
-      console.error('Generate error:', error);
+      
+      if (data.topics && Array.isArray(data.topics)) {
+        setTopics(data.topics);
+      } else {
+        setError('返回格式错误');
+      }
+    } catch (err) {
+      console.error('[Topics] Generate error:', err);
+      setError('网络错误，请重试');
     } finally {
       setIsGenerating(false);
     }
@@ -89,99 +85,110 @@ ${getCatProfilesContext()}
     setTimeout(() => setCopiedId(null), 2000);
   };
   
-  const filteredTopics = filter === 'all' 
-    ? topics 
-    : topics.filter(t => t.type === filter);
-  
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-            <Lightbulb size={24} className="text-amber-500" />
-            AI话题推荐
-          </h1>
-          <p className="text-gray-500">根据运营数据和猫咪档案，智能生成内容选题</p>
-        </div>
-        <button
-          onClick={generateTopics}
-          disabled={isGenerating}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 size={20} className="animate-spin" />
-              生成中...
-            </>
-          ) : (
-            <>
-              <Sparkles size={20} />
-              生成选题
-            </>
-          )}
-        </button>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+          <Lightbulb size={24} className="text-amber-500" />
+          AI话题推荐
+        </h1>
+        <p className="text-gray-500">基于账号定位，智能生成爆款选题</p>
       </div>
       
-      {/* Filter Tabs */}
-      {topics.length > 0 && (
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      {/* Controls */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <div className="flex flex-wrap items-end gap-4">
+          {/* Category Select */}
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              内容类型
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+            >
+              {categories.map(cat => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Season Select */}
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              季节
+            </label>
+            <select
+              value={season}
+              onChange={(e) => setSeason(e.target.value)}
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+            >
+              {seasons.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Generate Button */}
           <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              filter === 'all' 
-                ? 'bg-gray-800 text-white' 
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-            }`}
+            onClick={generateTopics}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 font-medium"
           >
-            全部 ({topics.length})
+            {isGenerating ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                生成中...
+              </>
+            ) : (
+              <>
+                <Sparkles size={20} />
+                生成选题
+              </>
+            )}
           </button>
-          {Object.entries(typeConfig).map(([key, config]) => {
-            const count = topics.filter(t => t.type === key).length;
-            if (count === 0) return null;
-            const IconComponent = config.icon;
-            return (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                  filter === key 
-                    ? 'bg-gray-800 text-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <IconComponent size={14} />
-                {config.label} ({count})
-              </button>
-            );
-          })}
+        </div>
+      </div>
+      
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          {error}
         </div>
       )}
       
       {/* Topics Grid */}
-      {filteredTopics.length > 0 ? (
+      {topics.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredTopics.map((topic, index) => {
-            const config = typeConfig[topic.type] || typeConfig.cat;
-            const IconComponent = config.icon;
+          {topics.map((topic, index) => {
+            const difficulty = difficultyConfig[topic.difficulty] || difficultyConfig['中等'];
+            const potential = potentialConfig[topic.potential] || potentialConfig['中'];
             
             return (
               <div 
                 key={index}
                 className="bg-white rounded-xl p-5 shadow-sm border hover:shadow-md transition-shadow"
               >
-                {/* Type Badge */}
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${config.color}`}>
-                    <IconComponent size={12} />
-                    {config.label}
+                {/* Badges */}
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${difficulty.color}`}>
+                    <Clock size={12} />
+                    {topic.difficulty}
                   </span>
-                  {topic.cats.length > 0 && (
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <Cat size={12} />
-                      出镜: {topic.cats.join(', ')}
-                    </span>
-                  )}
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${potential.color}`}>
+                    <TrendingUp size={12} />
+                    爆款潜力: {topic.potential}
+                  </span>
+                  <div className="flex items-center gap-0.5 ml-auto">
+                    {Array.from({ length: potential.stars }).map((_, i) => (
+                      <Star key={i} size={14} className="text-amber-400 fill-amber-400" />
+                    ))}
+                    {Array.from({ length: 3 - potential.stars }).map((_, i) => (
+                      <Star key={i} size={14} className="text-gray-200" />
+                    ))}
+                  </div>
                 </div>
                 
                 {/* Title */}
@@ -189,11 +196,22 @@ ${getCatProfilesContext()}
                   {topic.title}
                 </h3>
                 
+                {/* Reason */}
+                <p className="text-sm text-gray-600 mb-3 bg-amber-50 rounded-lg p-3 border border-amber-100">
+                  {topic.reason}
+                </p>
+                
                 {/* Outline */}
                 <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                  <p className="text-sm text-gray-600 whitespace-pre-line">
-                    {topic.outline}
-                  </p>
+                  <p className="text-xs text-gray-500 mb-2 font-medium">内容大纲</p>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {(Array.isArray(topic.outline) ? topic.outline : [topic.outline]).map((item, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 
                 {/* Tags */}
@@ -206,24 +224,22 @@ ${getCatProfilesContext()}
                 </div>
                 
                 {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => copyTitle(topic.title, index)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                  >
-                    {copiedId === index ? (
-                      <>
-                        <Check size={14} className="text-green-500" />
-                        已复制
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} />
-                        复制标题
-                      </>
-                    )}
-                  </button>
-                </div>
+                <button
+                  onClick={() => copyTitle(topic.title, index)}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                >
+                  {copiedId === index ? (
+                    <>
+                      <Check size={14} className="text-green-500" />
+                      已复制
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      复制标题
+                    </>
+                  )}
+                </button>
               </div>
             );
           })}
@@ -234,21 +250,13 @@ ${getCatProfilesContext()}
             <Lightbulb size={40} className="text-amber-500" />
           </div>
           <h3 className="text-xl font-bold text-gray-800 mb-2">
-            {isGenerating ? '正在生成选题...' : '还没有生成选题'}
+            {isGenerating ? '正在生成选题...' : '选择类型，生成爆款选题'}
           </h3>
           <p className="text-gray-500 mb-6">
             {isGenerating 
-              ? 'AI正在根据你的运营数据和猫咪档案生成内容建议'
-              : '点击上方按钮，让AI为你推荐本周内容选题'}
+              ? 'AI正在根据你的账号定位生成内容建议'
+              : '选择内容类型和季节，点击生成按钮'}
           </p>
-          {!isGenerating && (
-            <button
-              onClick={generateTopics}
-              className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:opacity-90 transition-opacity"
-            >
-              开始生成
-            </button>
-          )}
         </div>
       )}
       
@@ -259,10 +267,10 @@ ${getCatProfilesContext()}
           选题使用建议
         </h3>
         <ul className="text-sm text-amber-700 space-y-2">
-          <li>• 完善猫咪档案信息，AI可以生成更精准的猫咪相关选题</li>
-          <li>• 录入运营数据后，AI会根据数据表现优化选题方向</li>
           <li>• 建议每周生成一次，保持内容新鲜度</li>
           <li>• 可以把选题复制后在AI助手中进一步优化标题和内容</li>
+          <li>• 高潜力选题优先制作，简单难度的可以快速产出</li>
+          <li>• 结合当前热点和季节选择合适的类型</li>
         </ul>
       </div>
     </div>

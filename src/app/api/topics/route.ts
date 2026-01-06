@@ -1,83 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { NextRequest, NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
 
-export async function POST(request: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  
-  if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY is not set');
-    return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY未配置' },
-      { status: 500 }
-    );
-  }
-
-  const anthropic = new Anthropic({ apiKey });
-
-  try {
-    const { category = '穿搭', count = 5, context = '' } = await request.json();
-
-    const prompt = `作为小红书运营专家，为"小离岛岛"账号推荐${count}个${category}类选题。
-
+const SYSTEM_PROMPT = `你是小红书内容策划专家，为"小离岛岛"账号提供选题。
 账号定位：御姐风穿搭 × 氛围感美妆 × 精致生活
 目标用户：25-35岁女性，追求高级感穿搭
-${context ? `\n当前数据背景：\n${context}` : ''}
 
-要求：
-1. 符合御姐风格，高级感，不甜腻
-2. 有爆款潜力，结合当前热点
-3. 适合带货变现
-4. 给出完整标题（小红书风格）
-5. 如果是生活类，可考虑猫咪出镜增加记忆点
+生成5个爆款选题，每个包含：标题、标签、难度、潜力、理由、大纲
+严格返回JSON数组格式。`
 
-以JSON数组格式返回：
-[
-  {
-    "title": "完整的笔记标题",
-    "type": "内容类型（穿搭/妆容/好物/生活）",
-    "cats": ["如有猫咪出镜，填写猫咪名字，否则为空数组"],
-    "tags": ["标签1", "标签2", "标签3"],
-    "difficulty": "制作难度（简单/中等/复杂）",
-    "potential": "爆款潜力（高/中/低）",
-    "outline": "内容大纲，3-5点，用换行分隔",
-    "reason": "推荐理由"
-  }
-]
+export async function POST(request: NextRequest) {
+  try {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      console.error('[Topics API] ANTHROPIC_API_KEY not configured')
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
+    }
 
-只返回JSON数组，不要其他内容。`;
+    const { category = '穿搭', season = '通用' } = await request.json()
+    console.log('[Topics API] Generating topics for:', { category, season })
+    
+    const anthropic = new Anthropic({ apiKey })
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
-    });
+      max_tokens: 2500,
+      system: SYSTEM_PROMPT,
+      messages: [{ 
+        role: 'user', 
+        content: `生成5个${category}类选题，季节：${season}。返回JSON数组：[{"title":"标题","tags":["标签"],"difficulty":"简单/中等/复杂","potential":"高/中/低","reason":"理由","outline":["要点1","要点2"]}]` 
+      }],
+    })
 
-    const result = response.content[0].type === 'text' 
-      ? response.content[0].text 
-      : '';
+    const content = response.content[0].type === 'text' ? response.content[0].text : ''
+    console.log('[Topics API] Raw response:', content.substring(0, 200))
+    
+    const jsonMatch = content.match(/\[[\s\S]*\]/)
+    const topics = jsonMatch ? JSON.parse(jsonMatch[0]) : []
 
-    // 解析JSON数组
-    let topics = [];
-    try {
-      const jsonMatch = result.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        topics = JSON.parse(jsonMatch[0]);
-      }
-    } catch {
-      topics = [{ raw: result }];
-    }
-
-    return NextResponse.json({ 
-      topics,
-      usage: response.usage,
-    });
+    return NextResponse.json({ topics })
   } catch (error: unknown) {
-    console.error('Topics API Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { error: '话题推荐请求失败', details: errorMessage },
-      { status: 500 }
-    );
+    console.error('[Topics API] Error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
+export async function GET() {
+  return NextResponse.json({ 
+    status: 'ok', 
+    apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY 
+  })
+}
