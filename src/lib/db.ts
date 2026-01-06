@@ -1,13 +1,93 @@
-import { supabase, isSupabaseConfigured, Note, WeeklyStat, CatRecord } from './supabase'
+import { supabase, WeeklyStat, Note, CatRecord } from './supabase'
+
+// ============ 周数据统计 ============
+
+// 获取所有周统计数据
+export async function getWeeklyStats(): Promise<WeeklyStat[]> {
+  console.log('[DB] getWeeklyStats - fetching from Supabase')
+  
+  const { data, error } = await supabase
+    .from('weekly_stats')
+    .select('*')
+    .order('week_start', { ascending: false })
+
+  if (error) {
+    console.error('[DB] getWeeklyStats error:', error)
+    return []
+  }
+  
+  console.log('[DB] getWeeklyStats - got', data?.length || 0, 'records')
+  return data || []
+}
+
+// 获取最新一条数据
+export async function getLatestWeeklyStat(): Promise<WeeklyStat | null> {
+  const { data, error } = await supabase
+    .from('weekly_stats')
+    .select('*')
+    .order('week_start', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (error) {
+    console.error('[DB] getLatestWeeklyStat error:', error)
+    return null
+  }
+  return data
+}
+
+// 保存周统计数据
+export async function saveWeeklyStat(stat: Omit<WeeklyStat, 'id' | 'created_at'>): Promise<WeeklyStat | null> {
+  console.log('[DB] saveWeeklyStat - saving to Supabase:', stat)
+  
+  const { data, error } = await supabase
+    .from('weekly_stats')
+    .insert(stat)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('[DB] saveWeeklyStat error:', error)
+    return null
+  }
+  
+  console.log('[DB] saveWeeklyStat - saved:', data)
+  return data
+}
+
+// 更新周统计数据
+export async function updateWeeklyStat(id: string, stat: Partial<WeeklyStat>): Promise<WeeklyStat | null> {
+  const { data, error } = await supabase
+    .from('weekly_stats')
+    .update({ ...stat, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('[DB] updateWeeklyStat error:', error)
+    return null
+  }
+  return data
+}
+
+// 删除周统计数据
+export async function deleteWeeklyStat(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('weekly_stats')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('[DB] deleteWeeklyStat error:', error)
+    return false
+  }
+  return true
+}
 
 // ============ 笔记相关 ============
 
 export async function getNotes(): Promise<Note[]> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
   const { data, error } = await supabase
     .from('notes')
     .select('*')
@@ -15,19 +95,12 @@ export async function getNotes(): Promise<Note[]> {
   
   if (error) {
     console.error('[DB] getNotes error:', error)
-    throw error
+    return []
   }
-  
-  console.log('[DB] Got notes from Supabase:', data?.length || 0)
   return data || []
 }
 
-export async function createNote(note: Omit<Note, 'id' | 'created_at' | 'updated_at'>): Promise<Note> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
+export async function createNote(note: Omit<Note, 'id' | 'created_at' | 'updated_at'>): Promise<Note | null> {
   const { data, error } = await supabase
     .from('notes')
     .insert(note)
@@ -36,19 +109,12 @@ export async function createNote(note: Omit<Note, 'id' | 'created_at' | 'updated
   
   if (error) {
     console.error('[DB] createNote error:', error)
-    throw error
+    return null
   }
-  
-  console.log('[DB] Created note in Supabase:', data.id)
   return data
 }
 
-export async function updateNote(id: string, updates: Partial<Note>): Promise<Note> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
+export async function updateNote(id: string, updates: Partial<Note>): Promise<Note | null> {
   const { data, error } = await supabase
     .from('notes')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -58,18 +124,12 @@ export async function updateNote(id: string, updates: Partial<Note>): Promise<No
   
   if (error) {
     console.error('[DB] updateNote error:', error)
-    throw error
+    return null
   }
-  
   return data
 }
 
-export async function deleteNote(id: string): Promise<void> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
+export async function deleteNote(id: string): Promise<boolean> {
   const { error } = await supabase
     .from('notes')
     .delete()
@@ -77,68 +137,14 @@ export async function deleteNote(id: string): Promise<void> {
   
   if (error) {
     console.error('[DB] deleteNote error:', error)
-    throw error
+    return false
   }
-}
-
-// ============ 周数据相关 ============
-
-export async function getWeeklyStats(): Promise<WeeklyStat[]> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
-  const { data, error } = await supabase
-    .from('weekly_stats')
-    .select('*')
-    .order('week_start', { ascending: false })
-  
-  if (error) {
-    console.error('[DB] getWeeklyStats error:', error)
-    throw error
-  }
-  
-  console.log('[DB] Got weekly_stats from Supabase:', data?.length || 0)
-  return data || []
-}
-
-export async function createWeeklyStat(stat: Omit<WeeklyStat, 'id' | 'created_at'>): Promise<WeeklyStat> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
-  console.log('[DB] Creating weekly_stat in Supabase:', stat)
-  
-  const { data, error } = await supabase
-    .from('weekly_stats')
-    .insert(stat)
-    .select()
-    .single()
-  
-  if (error) {
-    console.error('[DB] createWeeklyStat error:', error)
-    throw error
-  }
-  
-  console.log('[DB] Created weekly_stat in Supabase:', data.id)
-  return data
-}
-
-export async function getLatestWeeklyStat(): Promise<WeeklyStat | null> {
-  const stats = await getWeeklyStats()
-  return stats.length > 0 ? stats[0] : null
+  return true
 }
 
 // ============ 猫咪相关 ============
 
 export async function getCats(): Promise<CatRecord[]> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
   const { data, error } = await supabase
     .from('cats')
     .select('*')
@@ -146,19 +152,12 @@ export async function getCats(): Promise<CatRecord[]> {
   
   if (error) {
     console.error('[DB] getCats error:', error)
-    throw error
+    return []
   }
-  
-  console.log('[DB] Got cats from Supabase:', data?.length || 0)
   return data || []
 }
 
-export async function updateCat(id: string, updates: Partial<CatRecord>): Promise<CatRecord> {
-  if (!supabase) {
-    console.error('[DB] Supabase not configured!')
-    throw new Error('Supabase未配置')
-  }
-  
+export async function updateCat(id: string, updates: Partial<CatRecord>): Promise<CatRecord | null> {
   const { data, error } = await supabase
     .from('cats')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -168,9 +167,8 @@ export async function updateCat(id: string, updates: Partial<CatRecord>): Promis
   
   if (error) {
     console.error('[DB] updateCat error:', error)
-    throw error
+    return null
   }
-  
   return data
 }
 
@@ -188,11 +186,6 @@ export async function incrementCatAppearance(catName: string): Promise<void> {
 
 export async function testSupabaseConnection(): Promise<{ success: boolean; message: string }> {
   console.log('[DB] Testing Supabase connection...')
-  console.log('[DB] isSupabaseConfigured:', isSupabaseConfigured())
-  
-  if (!supabase) {
-    return { success: false, message: 'Supabase客户端未初始化' }
-  }
   
   try {
     const { data, error } = await supabase.from('cats').select('name').limit(1)
