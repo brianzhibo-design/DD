@@ -1,41 +1,71 @@
-import { supabase, Note, WeeklyStat, CatRecord, isSupabaseConfigured } from './supabase'
+import { supabase, isSupabaseConfigured, Note, WeeklyStat, CatRecord } from './supabase'
+
+// ============ localStorage 辅助函数 ============
+
+function getFromLocalStorage<T>(key: string, defaultValue: T[] = []): T[] {
+  if (typeof window === 'undefined') return defaultValue
+  const stored = localStorage.getItem(`daodao_${key}`)
+  return stored ? JSON.parse(stored) : defaultValue
+}
+
+function saveToLocalStorage<T>(key: string, data: T[]): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(`daodao_${key}`, JSON.stringify(data))
+}
 
 // ============ 笔记相关 ============
 
 export async function getNotes(): Promise<Note[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('notes')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (error) {
-      console.error('Supabase getNotes error:', error)
-      throw error
+  console.log('[DB] getNotes - Supabase:', isSupabaseConfigured())
+  
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('[DB] Supabase getNotes error:', error)
+        return getFromLocalStorage<Note>('notes')
+      }
+      console.log('[DB] Got notes from Supabase:', data?.length || 0)
+      return data || []
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
+      return getFromLocalStorage<Note>('notes')
     }
-    return data || []
   }
   
-  // localStorage 降级
-  if (typeof window === 'undefined') return []
-  const stored = localStorage.getItem('daodao_notes')
-  return stored ? JSON.parse(stored) : []
+  console.log('[DB] Using localStorage for notes')
+  return getFromLocalStorage<Note>('notes')
 }
 
 export async function createNote(note: Omit<Note, 'id' | 'created_at' | 'updated_at'>): Promise<Note> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('notes')
-      .insert(note)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+  console.log('[DB] createNote - Supabase:', isSupabaseConfigured())
+  
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert(note)
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('[DB] Supabase createNote error:', error)
+        throw error
+      }
+      console.log('[DB] Created note in Supabase:', data.id)
+      return data
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
+    }
   }
   
   // localStorage 降级
-  const notes = await getNotes()
+  console.log('[DB] Creating note in localStorage')
+  const notes = getFromLocalStorage<Note>('notes')
   const newNote: Note = {
     ...note,
     id: crypto.randomUUID(),
@@ -43,99 +73,129 @@ export async function createNote(note: Omit<Note, 'id' | 'created_at' | 'updated
     updated_at: new Date().toISOString(),
   }
   notes.unshift(newNote)
-  localStorage.setItem('daodao_notes', JSON.stringify(notes))
+  saveToLocalStorage('notes', notes)
   return newNote
 }
 
 export async function updateNote(id: string, updates: Partial<Note>): Promise<Note> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('notes')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+  console.log('[DB] updateNote - Supabase:', isSupabaseConfigured())
+  
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('[DB] Supabase updateNote error:', error)
+        throw error
+      }
+      return data
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
+    }
   }
   
   // localStorage 降级
-  const notes = await getNotes()
+  const notes = getFromLocalStorage<Note>('notes')
   const index = notes.findIndex(n => n.id === id)
   if (index !== -1) {
     notes[index] = { ...notes[index], ...updates, updated_at: new Date().toISOString() }
-    localStorage.setItem('daodao_notes', JSON.stringify(notes))
+    saveToLocalStorage('notes', notes)
     return notes[index]
   }
   throw new Error('Note not found')
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase
-      .from('notes')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
-    return
+  console.log('[DB] deleteNote - Supabase:', isSupabaseConfigured())
+  
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', id)
+      
+      if (error) {
+        console.error('[DB] Supabase deleteNote error:', error)
+        throw error
+      }
+      return
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
+    }
   }
   
   // localStorage 降级
-  const notes = await getNotes()
+  const notes = getFromLocalStorage<Note>('notes')
   const filtered = notes.filter(n => n.id !== id)
-  localStorage.setItem('daodao_notes', JSON.stringify(filtered))
+  saveToLocalStorage('notes', filtered)
 }
 
 // ============ 周数据相关 ============
 
 export async function getWeeklyStats(): Promise<WeeklyStat[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('weekly_stats')
-      .select('*')
-      .order('week_start', { ascending: false })
-    
-    if (error) throw error
-    return data || []
+  console.log('[DB] getWeeklyStats - Supabase:', isSupabaseConfigured())
+  
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('weekly_stats')
+        .select('*')
+        .order('week_start', { ascending: false })
+      
+      if (error) {
+        console.error('[DB] Supabase getWeeklyStats error:', error)
+        return getFromLocalStorage<WeeklyStat>('weekly_stats')
+      }
+      console.log('[DB] Got weekly_stats from Supabase:', data?.length || 0)
+      return data || []
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
+      return getFromLocalStorage<WeeklyStat>('weekly_stats')
+    }
   }
   
-  // localStorage 降级
-  if (typeof window === 'undefined') return []
-  const stored = localStorage.getItem('daodao_weekly_stats')
-  return stored ? JSON.parse(stored) : []
+  console.log('[DB] Using localStorage for weekly_stats')
+  return getFromLocalStorage<WeeklyStat>('weekly_stats')
 }
 
 export async function createWeeklyStat(stat: Omit<WeeklyStat, 'id' | 'created_at'>): Promise<WeeklyStat> {
-  const useSupabase = isSupabaseConfigured() && supabase
-  console.log('[DB] createWeeklyStat - using:', useSupabase ? 'Supabase' : 'localStorage')
+  console.log('[DB] createWeeklyStat - Supabase:', isSupabaseConfigured())
   
-  if (useSupabase && supabase) {
-    const { data, error } = await supabase
-      .from('weekly_stats')
-      .insert(stat)
-      .select()
-      .single()
-    
-    if (error) {
-      console.error('[DB] Supabase insert error:', error)
-      throw error
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('weekly_stats')
+        .insert(stat)
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('[DB] Supabase createWeeklyStat error:', error)
+        throw error
+      }
+      console.log('[DB] Created weekly_stat in Supabase:', data.id)
+      return data
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
     }
-    console.log('[DB] Saved to Supabase:', data)
-    return data
   }
   
   // localStorage 降级
-  console.log('[DB] Falling back to localStorage')
-  const stats = await getWeeklyStats()
+  console.log('[DB] Creating weekly_stat in localStorage')
+  const stats = getFromLocalStorage<WeeklyStat>('weekly_stats')
   const newStat: WeeklyStat = {
     ...stat,
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
   }
   stats.unshift(newStat)
-  localStorage.setItem('daodao_weekly_stats', JSON.stringify(stats))
+  saveToLocalStorage('weekly_stats', stats)
   return newStat
 }
 
@@ -156,36 +216,56 @@ const DEFAULT_CATS: CatRecord[] = [
 ]
 
 export async function getCats(): Promise<CatRecord[]> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('cats')
-      .select('*')
-      .order('name')
-    
-    if (error) throw error
-    return data || []
+  console.log('[DB] getCats - Supabase:', isSupabaseConfigured())
+  
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('cats')
+        .select('*')
+        .order('name')
+      
+      if (error) {
+        console.error('[DB] Supabase getCats error:', error)
+        return getFromLocalStorage<CatRecord>('cats', DEFAULT_CATS)
+      }
+      console.log('[DB] Got cats from Supabase:', data?.length || 0)
+      return data || []
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
+      return getFromLocalStorage<CatRecord>('cats', DEFAULT_CATS)
+    }
   }
   
   // localStorage 降级
-  if (typeof window === 'undefined') return DEFAULT_CATS
-  const stored = localStorage.getItem('daodao_cats')
-  if (stored) return JSON.parse(stored)
+  console.log('[DB] Using localStorage for cats')
+  const stored = getFromLocalStorage<CatRecord>('cats')
+  if (stored.length > 0) return stored
   
-  localStorage.setItem('daodao_cats', JSON.stringify(DEFAULT_CATS))
+  saveToLocalStorage('cats', DEFAULT_CATS)
   return DEFAULT_CATS
 }
 
 export async function updateCat(id: string, updates: Partial<CatRecord>): Promise<CatRecord> {
-  if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase
-      .from('cats')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+  console.log('[DB] updateCat - Supabase:', isSupabaseConfigured())
+  
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('cats')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('[DB] Supabase updateCat error:', error)
+        throw error
+      }
+      return data
+    } catch (err) {
+      console.error('[DB] Supabase exception:', err)
+    }
   }
   
   // localStorage 降级
@@ -193,7 +273,7 @@ export async function updateCat(id: string, updates: Partial<CatRecord>): Promis
   const index = cats.findIndex(c => c.id === id)
   if (index !== -1) {
     cats[index] = { ...cats[index], ...updates, updated_at: new Date().toISOString() }
-    localStorage.setItem('daodao_cats', JSON.stringify(cats))
+    saveToLocalStorage('cats', cats)
     return cats[index]
   }
   throw new Error('Cat not found')
@@ -211,7 +291,6 @@ export async function incrementCatAppearance(catName: string): Promise<void> {
 
 // ============ 数据迁移工具 ============
 
-// 将localStorage数据迁移到Supabase
 export async function migrateToSupabase(): Promise<{ success: boolean; message: string }> {
   if (!isSupabaseConfigured() || !supabase) {
     return { success: false, message: 'Supabase未配置' }
@@ -219,39 +298,52 @@ export async function migrateToSupabase(): Promise<{ success: boolean; message: 
   
   try {
     // 迁移笔记
-    const localNotes = localStorage.getItem('daodao_notes')
-    if (localNotes) {
-      const notes = JSON.parse(localNotes)
-      if (notes.length > 0) {
-        const { error } = await supabase.from('notes').upsert(notes)
-        if (error) throw error
-      }
+    const localNotes = getFromLocalStorage<Note>('notes')
+    if (localNotes.length > 0) {
+      console.log('[DB] Migrating', localNotes.length, 'notes to Supabase')
+      const { error } = await supabase.from('notes').upsert(localNotes)
+      if (error) throw error
     }
     
     // 迁移周数据
-    const localStats = localStorage.getItem('daodao_weekly_stats')
-    if (localStats) {
-      const stats = JSON.parse(localStats)
-      if (stats.length > 0) {
-        const { error } = await supabase.from('weekly_stats').upsert(stats)
-        if (error) throw error
-      }
+    const localStats = getFromLocalStorage<WeeklyStat>('weekly_stats')
+    if (localStats.length > 0) {
+      console.log('[DB] Migrating', localStats.length, 'weekly_stats to Supabase')
+      const { error } = await supabase.from('weekly_stats').upsert(localStats)
+      if (error) throw error
     }
     
     // 迁移猫咪数据
-    const localCats = localStorage.getItem('daodao_cats')
-    if (localCats) {
-      const cats = JSON.parse(localCats)
-      if (cats.length > 0) {
-        const { error } = await supabase.from('cats').upsert(cats)
-        if (error) throw error
-      }
+    const localCats = getFromLocalStorage<CatRecord>('cats')
+    if (localCats.length > 0) {
+      console.log('[DB] Migrating', localCats.length, 'cats to Supabase')
+      const { error } = await supabase.from('cats').upsert(localCats)
+      if (error) throw error
     }
     
     return { success: true, message: '数据迁移成功' }
   } catch (error) {
-    console.error('Migration error:', error)
+    console.error('[DB] Migration error:', error)
     return { success: false, message: `迁移失败: ${error}` }
   }
 }
 
+// ============ 测试连接 ============
+
+export async function testSupabaseConnection(): Promise<{ success: boolean; message: string }> {
+  console.log('[DB] Testing Supabase connection...')
+  
+  if (!isSupabaseConfigured() || !supabase) {
+    return { success: false, message: 'Supabase未配置' }
+  }
+  
+  try {
+    const { data, error } = await supabase.from('cats').select('count')
+    if (error) {
+      return { success: false, message: `连接失败: ${error.message}` }
+    }
+    return { success: true, message: `连接成功，数据: ${JSON.stringify(data)}` }
+  } catch (err) {
+    return { success: false, message: `异常: ${err}` }
+  }
+}
