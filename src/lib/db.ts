@@ -105,6 +105,61 @@ export async function getNotes(): Promise<Note[]> {
   return data || []
 }
 
+// 获取已发布的笔记（用于AI分析）
+export async function getPublishedNotes(limit: number = 20): Promise<Note[]> {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .eq('status', 'published')
+    .order('publish_date', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('[DB] getPublishedNotes error:', error)
+    return []
+  }
+  return data || []
+}
+
+// 获取笔记统计摘要（用于AI上下文）
+export async function getNotesSummary(): Promise<{
+  total: number
+  byType: Record<string, number>
+  avgLikes: number
+  avgCollects: number
+  topPerforming: Note[]
+}> {
+  const notes = await getNotes()
+  const published = notes.filter(n => n.status === 'published')
+  
+  // 按类型统计
+  const byType: Record<string, number> = {}
+  published.forEach(n => {
+    byType[n.type] = (byType[n.type] || 0) + 1
+  })
+  
+  // 计算平均值
+  const avgLikes = published.length 
+    ? published.reduce((sum, n) => sum + n.likes, 0) / published.length 
+    : 0
+  const avgCollects = published.length 
+    ? published.reduce((sum, n) => sum + n.collects, 0) / published.length 
+    : 0
+  
+  // 找出表现最好的笔记（按收藏+点赞排序）
+  const topPerforming = [...published]
+    .sort((a, b) => (b.collects + b.likes) - (a.collects + a.likes))
+    .slice(0, 5)
+
+  return {
+    total: published.length,
+    byType,
+    avgLikes: Math.round(avgLikes),
+    avgCollects: Math.round(avgCollects),
+    topPerforming
+  }
+}
+
 export async function createNote(note: Omit<Note, 'id' | 'created_at' | 'updated_at'>): Promise<Note | null> {
   const { data, error } = await supabase
     .from('notes')
