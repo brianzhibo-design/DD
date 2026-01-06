@@ -51,9 +51,9 @@ export default function Home() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-0 space-y-5 md:space-y-6 pb-24 lg:pb-8">
       {/* Hero Header - Aurora Style */}
-      <div className="aurora-bg rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
+      <div className="aurora-bg rounded-2xl md:rounded-3xl p-5 md:p-8 text-white relative overflow-hidden shadow-xl">
         {/* Decorative Elements */}
         <div className="absolute right-0 top-0 opacity-20">
           <svg width="300" height="300" viewBox="0 0 200 200" className="blur-sm">
@@ -71,9 +71,9 @@ export default function Home() {
             <span className="text-white/80 text-sm font-medium">小红书运营系统</span>
           </div>
           
-          <h1 className="text-4xl font-bold mb-3 tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 tracking-tight flex items-center gap-2 md:gap-3">
             欢迎回来，岛岛！
-            <Palmtree size={36} className="text-white/90" />
+            <Palmtree size={28} className="text-white/90 md:w-9 md:h-9" />
           </h1>
           <p className="text-white/90 text-lg font-medium">
             御姐风穿搭 × 氛围感美妆 × 精致生活
@@ -99,7 +99,7 @@ export default function Home() {
       </div>
       
       {/* Stats Grid - Bento Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {loading ? (
           <div className="col-span-4 flex justify-center py-8">
             <Loader2 size={24} className="animate-spin text-pink-500" />
@@ -132,11 +132,11 @@ export default function Home() {
       
       {/* Quick Links - Bento Grid */}
       <div>
-        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <h2 className="text-base md:text-lg font-bold text-gray-800 mb-3 md:mb-4 flex items-center gap-2">
           <span className="w-1 h-5 bg-gradient-to-b from-pink-500 to-purple-500 rounded-full" />
           快捷入口
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {quickLinks.map(link => (
             <Link 
               key={link.href}
@@ -147,14 +147,14 @@ export default function Home() {
               <div className={`absolute inset-0 bg-gradient-to-br ${link.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
               <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${link.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                    <link.icon size={24} className="text-white" />
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className={`w-11 h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br ${link.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                    <link.icon size={20} className="text-white md:w-6 md:h-6" />
                   </div>
-                  <ArrowUpRight size={20} className="text-gray-300 group-hover:text-pink-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                  <ArrowUpRight size={18} className="text-gray-300 group-hover:text-pink-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                 </div>
-                <h3 className="font-bold text-gray-800 mb-1 group-hover:text-pink-600 transition-colors">{link.label}</h3>
-                <p className="text-sm text-gray-500">{link.desc}</p>
+                <h3 className="font-semibold md:font-bold text-gray-800 text-sm md:text-base mb-0.5 md:mb-1 group-hover:text-pink-600 transition-colors">{link.label}</h3>
+                <p className="text-xs md:text-sm text-gray-500 line-clamp-1">{link.desc}</p>
               </div>
             </Link>
           ))}
@@ -162,11 +162,11 @@ export default function Home() {
       </div>
       
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Content Strategy */}
         <div className="bento-card">
-          <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
-            <PieChart size={20} className="text-pink-500" />
+          <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-5 flex items-center gap-2">
+            <PieChart size={18} className="text-pink-500 md:w-5 md:h-5" />
             内容配比建议
           </h2>
           <div className="space-y-4">
@@ -198,8 +198,8 @@ export default function Home() {
         
         {/* Weekly Todos */}
         <div className="bento-card">
-          <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
-            <CheckCircle2 size={20} className="text-emerald-500" />
+          <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-5 flex items-center gap-2">
+            <CheckCircle2 size={18} className="text-emerald-500 md:w-5 md:h-5" />
             本周待办
           </h2>
           <div className="space-y-3">
@@ -226,11 +226,11 @@ export default function Home() {
       
       {/* 6 Cats Section */}
       <div className="bento-card">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Cat size={20} className="text-pink-500" />
+        <div className="flex items-center justify-between mb-4 md:mb-5">
+          <h2 className="text-base md:text-lg font-bold text-gray-800 flex items-center gap-2">
+            <Cat size={18} className="text-pink-500 md:w-5 md:h-5" />
             六只猫档案
-            <span className="text-xs font-normal text-gray-400 ml-2">5公1母 · 偶尔出镜增加记忆点</span>
+            <span className="text-[10px] md:text-xs font-normal text-gray-400 ml-1 md:ml-2 hidden sm:inline">5公1母 · 偶尔出镜增加记忆点</span>
           </h2>
           <Link 
             href="/cats" 
@@ -240,23 +240,23 @@ export default function Home() {
             <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
           {initialCats.map((cat, i) => (
             <div 
               key={cat.id} 
-              className={`${cat.bgColor} rounded-2xl p-4 text-center group hover:shadow-md transition-all cursor-pointer hover:-translate-y-1`}
+              className={`${cat.bgColor} rounded-xl md:rounded-2xl p-2.5 md:p-4 text-center group hover:shadow-md transition-all cursor-pointer hover:-translate-y-1`}
               style={{ animationDelay: `${i * 100}ms` }}
             >
               <div 
-                className="w-10 h-10 mx-auto rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"
+                className="w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"
                 style={{ backgroundColor: cat.color + '30' }}
               >
-                <Cat size={20} style={{ color: cat.color }} />
+                <Cat size={16} className="md:w-5 md:h-5" style={{ color: cat.color }} />
               </div>
-              <p className="font-bold mt-2" style={{ color: cat.color }}>{cat.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{cat.gender} · {cat.appearance}</p>
+              <p className="font-bold mt-1.5 md:mt-2 text-sm md:text-base" style={{ color: cat.color }}>{cat.name}</p>
+              <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 line-clamp-1">{cat.gender} · {cat.appearance}</p>
               {cat.notes && (
-                <p className="text-[10px] text-gray-400 mt-1 truncate">{cat.notes}</p>
+                <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 md:mt-1 truncate hidden md:block">{cat.notes}</p>
               )}
             </div>
           ))}
