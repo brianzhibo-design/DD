@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import AppLayout from "@/components/AppLayout";
 
 export const metadata: Metadata = {
   title: "小离岛岛 · 小红书运营系统",
@@ -8,6 +8,22 @@ export const metadata: Metadata = {
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "小离岛岛",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -24,14 +40,13 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" 
           rel="stylesheet" 
         />
+        {/* PWA 支持 */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#EC4899" />
       </head>
-      <body className="antialiased min-h-screen">
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 p-6 lg:p-8 overflow-auto">
-            {children}
-          </main>
-        </div>
+      <body className="antialiased overscroll-none touch-pan-y">
+        <AppLayout>{children}</AppLayout>
       </body>
     </html>
   );
