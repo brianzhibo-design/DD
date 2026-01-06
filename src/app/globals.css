@@ -548,6 +548,148 @@ select:focus {
   }
 }
 
+/* ===== AI Chat UI (AI-Native UI Style) ===== */
+/* Based on UI UX Pro Max recommendations */
+
+/* 聊天消息气泡 - 用户 */
+.chat-bubble-user {
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--secondary-500) 100%);
+  color: white;
+  border-radius: 20px 20px 6px 20px;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.25);
+}
+
+/* 聊天消息气泡 - AI助手 */
+.chat-bubble-assistant {
+  background: white;
+  color: var(--text-primary);
+  border-radius: 20px 20px 20px 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* AI 打字指示器动画 */
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0ms;
+  background: var(--primary-300);
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 160ms;
+  background: var(--secondary-300);
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 320ms;
+  background: var(--accent-400);
+}
+
+/* 消息淡入动画 */
+@keyframes message-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-appear {
+  animation: message-appear 0.3s ease-out forwards;
+}
+
+/* 快捷操作卡片 */
+.quick-action-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--primary-100);
+  transition: all var(--transition-normal) ease-out;
+  cursor: pointer;
+}
+
+.quick-action-card:hover {
+  border-color: var(--primary-300);
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.12);
+  transform: translateY(-2px);
+}
+
+.quick-action-card:active {
+  transform: scale(0.98);
+}
+
+/* 输入框聚焦发光效果 */
+.chat-input-glow:focus-within {
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
+  border-color: var(--primary-300);
+  background: white;
+}
+
+/* AI 头像脉冲动画 */
+@keyframes avatar-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(236, 72, 153, 0);
+  }
+}
+
+.avatar-pulse {
+  animation: avatar-pulse 2s ease-in-out infinite;
+}
+
+/* 发送按钮激活状态 */
+.send-button-active {
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--secondary-500) 100%);
+  box-shadow: 0 4px 16px rgba(236, 72, 153, 0.35);
+  transition: all var(--transition-fast) ease-out;
+}
+
+.send-button-active:hover {
+  box-shadow: 0 6px 24px rgba(236, 72, 153, 0.45);
+  transform: translateY(-1px);
+}
+
+.send-button-active:active {
+  transform: scale(0.95);
+}
+
+/* ===== Reduced Motion 全局支持 ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .typing-dot,
+  .avatar-pulse,
+  .message-appear {
+    animation: none !important;
+  }
+}
+
 /* ===== 深色模式支持 ===== */
 @media (prefers-color-scheme: dark) {
   /* 暂时保持浅色模式 */
