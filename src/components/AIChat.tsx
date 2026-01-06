@@ -70,7 +70,7 @@ export default function AIChat() {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || data.error || '抱歉，出现了一些问题',
+        content: data.message || data.response || data.error || '抱歉，出现了一些问题',
         timestamp: new Date(),
       };
       
