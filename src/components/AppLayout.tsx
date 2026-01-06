@@ -1,12 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
 
+// 这些页面使用独立布局，不需要通用的 header/sidebar/bottomnav
+const STANDALONE_PAGES = ['/assistant'];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  
+  // 检查是否是独立布局页面
+  const isStandalonePage = STANDALONE_PAGES.some(page => pathname?.startsWith(page));
+  
+  // 独立布局页面直接渲染 children
+  if (isStandalonePage) {
+    return <>{children}</>;
+  }
   
   return (
     <div className="flex min-h-screen min-h-dvh bg-gray-50">
@@ -29,4 +42,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
