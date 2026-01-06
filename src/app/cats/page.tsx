@@ -33,6 +33,7 @@ export default function CatsPage() {
               dbId: dbCat.id, // 保存数据库ID
               personality: dbCat.personality || cat.personality,
               appearance: dbCat.color || cat.appearance,
+              notes: dbCat.breed || cat.notes, // breed -> notes (品种)
             };
           }
           return cat;
@@ -57,10 +58,11 @@ export default function CatsPage() {
       }
       
       if (dbId) {
-        // 只更新数据库中存在的字段
+        // 更新数据库中存在的字段
         const result = await updateCat(dbId, {
           personality: updatedCat.personality || '',
           color: updatedCat.appearance || '',
+          breed: updatedCat.notes || '', // notes -> breed (品种)
         });
         console.log('[Cats] Update result:', result);
       } else {

@@ -49,10 +49,11 @@ export interface Note {
 export interface CatRecord {
   id?: string
   name: string
-  gender?: string
-  color?: string
-  personality?: string
-  appearance_count?: number
+  breed?: string        // 品种
+  color?: string        // 颜色
+  gender?: string       // 性别
+  personality?: string  // 性格标签
+  appearance_count?: number  // 出镜次数
   created_at?: string
   updated_at?: string
 }
