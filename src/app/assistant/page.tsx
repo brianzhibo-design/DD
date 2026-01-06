@@ -32,8 +32,8 @@ export default function AssistantPage() {
   // 自动调整输入框高度
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = '20px'
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 100) + 'px'
+      textareaRef.current.style.height = '24px'
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px'
     }
   }, [input])
 
@@ -111,85 +111,106 @@ export default function AssistantPage() {
   }
 
   const quickActions = [
-    { icon: <BarChart3 className="w-4 h-4" />, text: '分析数据表现', color: 'text-blue-500' },
-    { icon: <Lightbulb className="w-4 h-4" />, text: '推荐爆款选题', color: 'text-amber-500' },
-    { icon: <FileText className="w-4 h-4" />, text: '优化标题文案', color: 'text-emerald-500' },
-    { icon: <Cat className="w-4 h-4" />, text: '猫咪出镜创意', color: 'text-pink-500' },
+    { icon: <BarChart3 className="w-[18px] h-[18px]" />, text: '分析数据表现', color: 'text-blue-500', bg: 'bg-blue-50' },
+    { icon: <Lightbulb className="w-[18px] h-[18px]" />, text: '推荐爆款选题', color: 'text-amber-500', bg: 'bg-amber-50' },
+    { icon: <FileText className="w-[18px] h-[18px]" />, text: '优化标题文案', color: 'text-emerald-500', bg: 'bg-emerald-50' },
+    { icon: <Cat className="w-[18px] h-[18px]" />, text: '猫咪出镜创意', color: 'text-pink-500', bg: 'bg-pink-50' },
   ]
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-gradient-to-b from-slate-50 to-white">
-      {/* 顶部标题栏 - 固定高度 */}
-      <header className="flex-shrink-0 h-14 md:h-16 bg-white/90 backdrop-blur-lg border-b border-slate-100 px-4 flex items-center gap-3">
+    <div className="flex flex-col h-full min-h-0 bg-[#F5F5F5]">
+      {/* ===== 顶部标题栏 ===== */}
+      {/* 高度: 56px (移动端) / 64px (桌面端) - 符合 iOS 导航栏标准 */}
+      <header className="flex-shrink-0 h-14 lg:h-16 bg-white border-b border-gray-100 px-4 flex items-center gap-3">
+        {/* 头像: 36x36 (移动端) / 40x40 (桌面端) */}
         <div className="relative">
-          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center shadow-md shadow-purple-200/40">
+          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-[12px] bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center shadow-md">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
+          {/* 在线状态指示器 */}
           <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white"></span>
         </div>
-        <div>
-          <h1 className="text-[15px] md:text-[16px] font-semibold text-slate-800">AI助手</h1>
-          <p className="text-[11px] md:text-[12px] text-slate-400">小离岛岛</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-[15px] lg:text-[16px] font-semibold text-gray-900 leading-tight">AI助手</h1>
+          <p className="text-[11px] lg:text-[12px] text-gray-400 leading-tight">小离岛岛 · 运营顾问</p>
         </div>
       </header>
 
-      {/* 消息区域 - 可滚动，填充剩余空间 */}
+      {/* ===== 消息区域 ===== */}
+      {/* flex-1 填充剩余空间，overflow-y-auto 支持滚动 */}
       <div 
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto overscroll-contain"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="px-3 md:px-4 py-4 space-y-4 max-w-3xl mx-auto">
-          {/* 欢迎区域 */}
+        {/* 内容容器: 水平间距 16px，垂直间距 16px，最大宽度 720px */}
+        <div className="px-4 py-4 space-y-3 max-w-3xl mx-auto">
+          
+          {/* ===== 欢迎区域 ===== */}
           {messages.length === 0 && (
-            <div className="flex flex-col items-center pt-6 md:pt-12 pb-4">
-              {/* 头像光晕效果 */}
-              <div className="relative mb-4 md:mb-5">
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-300 to-purple-300 rounded-full blur-2xl opacity-30 scale-150"></div>
-                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center shadow-xl shadow-purple-200/40">
-                  <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-white" />
+            <div className="flex flex-col items-center pt-8 lg:pt-16 pb-6">
+              {/* 头像区域 - 带光晕效果 */}
+              <div className="relative mb-5">
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-purple-200 rounded-full blur-2xl opacity-50 scale-150"></div>
+                <div className="relative w-20 h-20 lg:w-24 lg:h-24 rounded-[24px] lg:rounded-[28px] bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 flex items-center justify-center shadow-xl">
+                  <Sparkles className="w-10 h-10 lg:w-12 lg:h-12 text-white" />
                 </div>
               </div>
               
-              <h2 className="text-[17px] md:text-[20px] font-semibold text-slate-800 mb-1">你好，岛岛!</h2>
-              <p className="text-[13px] md:text-[14px] text-slate-500 mb-5 md:mb-6">我是你的AI运营助手，可以帮你：</p>
+              {/* 欢迎文案 - 间距遵循 8pt 网格 */}
+              <h2 className="text-[20px] lg:text-[24px] font-semibold text-gray-900 mb-2">你好，岛岛!</h2>
+              <p className="text-[14px] lg:text-[15px] text-gray-500 mb-8">我是你的AI运营助手，可以帮你：</p>
               
-              {/* 快捷操作按钮 */}
-              <div className="grid grid-cols-2 gap-2 md:gap-3 w-full max-w-sm">
+              {/* 快捷操作按钮 - 2列网格，间距 12px */}
+              <div className="grid grid-cols-2 gap-3 w-full max-w-[320px] lg:max-w-[360px]">
                 {quickActions.map((item, i) => (
                   <button
                     key={i}
                     onClick={() => handleSend(item.text)}
                     disabled={loading}
-                    className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-3 bg-white rounded-xl md:rounded-2xl border border-slate-100 text-[13px] md:text-[14px] text-slate-700 font-medium shadow-sm hover:shadow-md hover:border-slate-200 active:scale-[0.98] transition-all disabled:opacity-50"
+                    className={`
+                      flex items-center gap-3 
+                      px-4 py-3.5 
+                      bg-white rounded-2xl 
+                      border border-gray-100 
+                      text-[14px] text-gray-700 font-medium 
+                      shadow-sm 
+                      hover:shadow-md hover:border-gray-200 
+                      active:scale-[0.98] 
+                      transition-all duration-200
+                      disabled:opacity-50 disabled:pointer-events-none
+                      min-h-[52px]
+                    `}
                   >
-                    <span className={item.color}>{item.icon}</span>
-                    <span className="truncate">{item.text}</span>
+                    <span className={`${item.color} ${item.bg} p-1.5 rounded-lg`}>{item.icon}</span>
+                    <span className="truncate flex-1 text-left">{item.text}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* 消息列表 */}
+          {/* ===== 消息列表 ===== */}
           {messages.map((msg, index) => (
             <div key={msg.id}>
-              {/* 时间戳 */}
+              {/* 时间戳 - 上下间距 12px */}
               {shouldShowTime(msg, messages[index - 1]) && (
-                <div className="text-center text-[11px] text-slate-400 my-3 select-none">
+                <div className="text-center text-[12px] text-gray-400 my-3 py-1 select-none">
                   {formatTime(msg.timestamp)}
                 </div>
               )}
               
-              {/* 消息行 */}
-              <div className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                {/* 头像 */}
+              {/* 消息行 - 头像与气泡间距 8px */}
+              <div className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                {/* AI 头像: 32x32 */}
                 {msg.role === 'assistant' && (
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
-                    msg.isError 
+                  <div className={`
+                    w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm
+                    ${msg.isError 
                       ? 'bg-gradient-to-br from-red-400 to-red-500'
                       : 'bg-gradient-to-br from-pink-400 to-purple-500'
-                  }`}>
+                    }
+                  `}>
                     {msg.isError 
                       ? <AlertCircle className="w-4 h-4 text-white" />
                       : <Sparkles className="w-4 h-4 text-white" />
@@ -197,34 +218,38 @@ export default function AssistantPage() {
                   </div>
                 )}
                 
+                {/* 用户头像: 32x32 */}
                 {msg.role === 'user' && (
                   <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-sm">
                     <User className="w-4 h-4 text-white" />
                   </div>
                 )}
                 
-                {/* 气泡 */}
-                <div className={`max-w-[78%] md:max-w-[75%] px-3.5 py-2.5 ${
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-2xl rounded-br-lg shadow-md shadow-pink-200/30'
+                {/* 消息气泡 - 内边距 12px 16px，最大宽度 75% */}
+                <div className={`
+                  max-w-[75%] 
+                  px-4 py-3
+                  ${msg.role === 'user'
+                    ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-[20px] rounded-br-md shadow-md'
                     : msg.isError
-                      ? 'bg-red-50 text-red-700 rounded-2xl rounded-bl-lg border border-red-100'
-                      : 'bg-white text-slate-700 rounded-2xl rounded-bl-lg shadow-md shadow-slate-100/50 border border-slate-50'
-                }`}>
-                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">{msg.content}</p>
+                      ? 'bg-red-50 text-red-700 rounded-[20px] rounded-bl-md border border-red-100'
+                      : 'bg-white text-gray-700 rounded-[20px] rounded-bl-md shadow-sm border border-gray-50'
+                  }
+                `}>
+                  <p className="text-[15px] leading-[1.6] whitespace-pre-wrap break-words">{msg.content}</p>
                 </div>
               </div>
             </div>
           ))}
 
-          {/* 加载动画 */}
+          {/* ===== 加载动画 ===== */}
           {loading && (
-            <div className="flex items-end gap-2">
+            <div className="flex items-start gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-sm">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-lg shadow-md shadow-slate-100/50 border border-slate-50">
-                <div className="flex gap-1.5">
+              <div className="bg-white px-4 py-3 rounded-[20px] rounded-bl-md shadow-sm border border-gray-50">
+                <div className="flex gap-1.5 items-center h-[24px]">
                   <span className="w-2 h-2 bg-pink-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                   <span className="w-2 h-2 bg-purple-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
                   <span className="w-2 h-2 bg-indigo-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
@@ -232,22 +257,27 @@ export default function AssistantPage() {
               </div>
             </div>
           )}
+          
+          {/* 底部安全区 - 为输入框留出视觉空间 */}
+          <div className="h-2"></div>
         </div>
       </div>
 
-      {/* 底部输入区域 - 固定高度，为底部导航栏留空间 */}
-      <footer className="flex-shrink-0 bg-white/95 backdrop-blur-lg border-t border-slate-100 px-3 md:px-4 py-2.5 md:py-3 mb-16 lg:mb-0">
-        <div className="flex items-end gap-2 max-w-3xl mx-auto">
-          {/* 附件按钮 */}
+      {/* ===== 底部输入区域 ===== */}
+      {/* 底部间距 64px (mb-16) 为底部导航栏留空间 */}
+      <footer className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-3 mb-16 lg:mb-0">
+        {/* 输入行容器 - 最大宽度与消息区域一致 */}
+        <div className="flex items-end gap-3 max-w-3xl mx-auto">
+          {/* 附件按钮: 44x44 触摸目标 */}
           <button 
-            className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors flex-shrink-0"
+            className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 hover:text-gray-600 active:scale-95 transition-all flex-shrink-0"
             aria-label="添加附件"
           >
             <ImageIcon className="w-5 h-5" />
           </button>
           
-          {/* 输入框 */}
-          <div className="flex-1 bg-slate-100/80 rounded-2xl px-3 md:px-4 py-2 md:py-2.5 focus-within:ring-2 focus-within:ring-pink-200 focus-within:bg-white transition-all">
+          {/* 输入框容器 - 圆角 24px，内边距 12px 16px */}
+          <div className="flex-1 bg-gray-100 rounded-[24px] px-4 py-2.5 focus-within:ring-2 focus-within:ring-pink-200 focus-within:bg-white focus-within:shadow-sm transition-all">
             <textarea
               ref={textareaRef}
               value={input}
@@ -256,25 +286,31 @@ export default function AssistantPage() {
               placeholder="输入你的问题..."
               rows={1}
               disabled={loading}
-              className="w-full bg-transparent resize-none outline-none text-[14px] md:text-[15px] text-slate-700 placeholder:text-slate-400 disabled:opacity-50 leading-relaxed"
-              style={{ maxHeight: '100px', minHeight: '20px' }}
+              className="w-full bg-transparent resize-none outline-none text-[15px] text-gray-700 placeholder:text-gray-400 disabled:opacity-50 leading-[1.5]"
+              style={{ maxHeight: '120px', minHeight: '24px' }}
             />
           </div>
           
-          {/* 发送按钮 */}
+          {/* 发送按钮: 44x44 触摸目标 */}
           <button
             onClick={() => handleSend()}
             disabled={!input.trim() || loading}
             aria-label="发送消息"
-            className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${
-              input.trim() && !loading
-                ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-200/40 hover:shadow-xl active:scale-95'
-                : 'bg-slate-100 text-slate-300'
-            }`}
+            className={`
+              w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 
+              transition-all duration-200
+              ${input.trim() && !loading
+                ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-200/50 hover:shadow-xl active:scale-95'
+                : 'bg-gray-100 text-gray-300'
+              }
+            `}
           >
             <Send className="w-5 h-5" />
           </button>
         </div>
+        
+        {/* iOS 安全区域 */}
+        <div className="h-safe"></div>
       </footer>
     </div>
   )
