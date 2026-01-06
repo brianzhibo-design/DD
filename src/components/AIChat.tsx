@@ -67,10 +67,39 @@ export default function AIChat() {
       
       const data = await res.json();
       
+      // 调试：打印API响应
+      console.log('API Response:', JSON.stringify(data, null, 2));
+      
+      // 兼容多种API响应格式
+      const extractContent = (d: Record<string, unknown>): string => {
+        // 直接字段
+        if (typeof d.message === 'string' && d.message) return d.message;
+        if (typeof d.response === 'string' && d.response) return d.response;
+        if (typeof d.content === 'string' && d.content) return d.content;
+        if (typeof d.text === 'string' && d.text) return d.text;
+        if (typeof d.reply === 'string' && d.reply) return d.reply;
+        if (typeof d.answer === 'string' && d.answer) return d.answer;
+        
+        // 嵌套格式
+        if (d.data && typeof d.data === 'object') {
+          const nested = d.data as Record<string, unknown>;
+          if (typeof nested.message === 'string') return nested.message;
+          if (typeof nested.content === 'string') return nested.content;
+        }
+        
+        // 错误信息
+        if (typeof d.error === 'string' && d.error) return `错误: ${d.error}`;
+        
+        // 最后尝试：如果整个响应是字符串
+        if (typeof d === 'string') return d;
+        
+        return '抱歉，无法解析AI响应';
+      };
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.message || data.response || data.error || '抱歉，出现了一些问题',
+        content: extractContent(data),
         timestamp: new Date(),
       };
       
