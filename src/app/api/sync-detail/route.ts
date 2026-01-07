@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-export const maxDuration = 25
+export const maxDuration = 60 // 增加到60秒超时
 
 const ONEAPI_BASE = 'https://api.getoneapi.com'
+
+// OneAPI 错误码映射
+const ERROR_CODES: Record<number, string> = {
+  0: '请求失败，请重试',
+  401: 'API密钥无效',
+  403: '账户不可用',
+  404: 'API 未找到',
+  301: '余额不足'
+}
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -12,26 +21,71 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-async function oneApiRequest(endpoint: string, body: object) {
+// 带重试的 API 请求（最多3次重试，只有 code=200 计费）
+async function oneApiRequest(
+  endpoint: string, 
+  body: object, 
+  options?: { maxRetries?: number; alternativeEndpoints?: string[] }
+): Promise<any> {
   const apiKey = process.env.ONEAPI_KEY
   if (!apiKey) throw new Error('ONEAPI_KEY 未配置')
 
-  const response = await fetch(`${ONEAPI_BASE}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(body)
-  })
-
-  const result = await response.json()
+  const maxRetries = options?.maxRetries ?? 2
+  const endpoints = [endpoint, ...(options?.alternativeEndpoints || [])]
   
-  if (result.code !== 200) {
-    throw new Error(result.message || `OneAPI错误: ${result.code}`)
+  let lastError: Error | null = null
+
+  for (const ep of endpoints) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 30000) // 30秒超时
+
+        const response = await fetch(`${ONEAPI_BASE}${ep}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        })
+
+        clearTimeout(timeout)
+        const result = await response.json()
+        
+        if (result.code === 200) {
+          return result.data
+        }
+
+        const errorMsg = ERROR_CODES[result.code] || result.message || `错误: ${result.code}`
+        
+        // 401/403/301 不需要重试
+        if ([401, 403, 301].includes(result.code)) {
+          throw new Error(errorMsg)
+        }
+
+        lastError = new Error(errorMsg)
+        
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, attempt * 300))
+        }
+
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          lastError = new Error('请求超时')
+        } else {
+          lastError = error
+        }
+        
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, attempt * 300))
+        }
+      }
+    }
   }
 
-  return result.data
+  throw lastError || new Error('API 请求失败')
 }
 
 // 同步笔记详情和评论（分批处理，每次处理5篇）
@@ -68,8 +122,15 @@ export async function POST(request: NextRequest) {
       const noteId = note.id
       
       try {
-        // 获取笔记详情
-        const detailResult = await oneApiRequest('/api/xiaohongshu/fetch_video_detail_v6', { noteId })
+        // 获取笔记详情（带备用版本）
+        const detailResult = await oneApiRequest(
+          '/api/xiaohongshu/fetch_video_detail_v6', 
+          { noteId },
+          { 
+            maxRetries: 2,
+            alternativeEndpoints: ['/api/xiaohongshu/fetch_video_detail_v5'] 
+          }
+        )
         const noteDetail = detailResult.note_list?.[0] || detailResult
 
         if (noteDetail) {
@@ -141,8 +202,8 @@ export async function POST(request: NextRequest) {
         console.log(`[笔记详情] 获取 ${noteId} 失败: ${e.message}`)
       }
 
-      // 检查是否快超时
-      if (Date.now() - startTime > 20000) {
+      // 检查是否快超时（55秒安全边界）
+      if (Date.now() - startTime > 55000) {
         console.log('[详情同步] 接近超时，停止处理')
         break
       }
