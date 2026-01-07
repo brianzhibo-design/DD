@@ -1,22 +1,73 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap } from 'lucide-react';
 import { testSupabaseConnection } from '@/lib/db';
 
+interface ApiStatus {
+  success: boolean;
+  message: string;
+}
+
 export default function SettingsPage() {
-  const [connectionStatus, setConnectionStatus] = useState<{success: boolean; message: string} | null>(null);
-  const [testing, setTesting] = useState(false);
+  const [supabaseStatus, setSupabaseStatus] = useState<ApiStatus | null>(null);
+  const [claudeStatus, setClaudeStatus] = useState<ApiStatus | null>(null);
+  const [oneapiStatus, setOneapiStatus] = useState<ApiStatus | null>(null);
+  const [testingSupabase, setTestingSupabase] = useState(false);
+  const [testingClaude, setTestingClaude] = useState(false);
+  const [testingOneapi, setTestingOneapi] = useState(false);
   
-  const testConnection = async () => {
-    setTesting(true);
+  const testSupabase = async () => {
+    setTestingSupabase(true);
     const result = await testSupabaseConnection();
-    setConnectionStatus(result);
-    setTesting(false);
+    setSupabaseStatus(result);
+    setTestingSupabase(false);
+  };
+
+  const testClaude = async () => {
+    setTestingClaude(true);
+    try {
+      const response = await fetch('/api/chat', { method: 'GET' });
+      const data = await response.json();
+      if (data.configured) {
+        setClaudeStatus({ success: true, message: '已配置' });
+      } else {
+        setClaudeStatus({ success: false, message: 'API Key 未配置' });
+      }
+    } catch {
+      setClaudeStatus({ success: false, message: '检测失败' });
+    }
+    setTestingClaude(false);
+  };
+
+  const testOneapi = async () => {
+    setTestingOneapi(true);
+    try {
+      const response = await fetch('/api/sync-xhs', { method: 'GET' });
+      const data = await response.json();
+      if (data.configured?.oneapiKey && data.configured?.xhsUserId) {
+        setOneapiStatus({ success: true, message: '已配置' });
+      } else if (data.configured?.oneapiKey) {
+        setOneapiStatus({ success: false, message: '缺少 XHS_USER_ID' });
+      } else if (data.configured?.xhsUserId) {
+        setOneapiStatus({ success: false, message: '缺少 ONEAPI_KEY' });
+      } else {
+        setOneapiStatus({ success: false, message: '未配置' });
+      }
+    } catch {
+      setOneapiStatus({ success: false, message: '检测失败' });
+    }
+    setTestingOneapi(false);
+  };
+
+  const testAllConnections = async () => {
+    testSupabase();
+    testClaude();
+    testOneapi();
   };
   
   useEffect(() => {
-    testConnection();
+    testAllConnections();
   }, []);
   
   return (
@@ -29,46 +80,98 @@ export default function SettingsPage() {
         <p className="text-gray-500">管理系统配置和数据库连接</p>
       </div>
       
-      {/* Database Status */}
+      {/* 服务连接状态 */}
       <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
-        <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Database size={18} className="text-green-500" />
-          数据库状态
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-gray-800 flex items-center gap-2">
+            <Zap size={18} className="text-amber-500" />
+            服务连接状态
+          </h2>
+          <button
+            onClick={testAllConnections}
+            disabled={testingSupabase || testingClaude || testingOneapi}
+            className="text-sm text-pink-500 hover:text-pink-600 flex items-center gap-1 disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={(testingSupabase || testingClaude || testingOneapi) ? 'animate-spin' : ''} />
+            全部刷新
+          </button>
+        </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {/* Supabase */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <p className="font-medium text-gray-700">Supabase 连接</p>
-              <p className="text-xs text-gray-400 mt-1">PostgreSQL 云数据库</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Database size={20} className="text-green-600" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-700">Supabase</p>
+                <p className="text-xs text-gray-400">PostgreSQL 云数据库</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              {testing ? (
-                <RefreshCw size={18} className="text-gray-400 animate-spin" />
-              ) : connectionStatus?.success ? (
-                <CheckCircle size={18} className="text-green-500" />
+              {testingSupabase ? (
+                <RefreshCw size={16} className="text-gray-400 animate-spin" />
+              ) : supabaseStatus?.success ? (
+                <CheckCircle size={16} className="text-green-500" />
               ) : (
-                <XCircle size={18} className="text-red-500" />
+                <XCircle size={16} className="text-red-500" />
               )}
-              <span className={`text-sm ${connectionStatus?.success ? 'text-green-600' : 'text-red-600'}`}>
-                {testing ? '测试中...' : connectionStatus?.success ? '已连接' : '未连接'}
+              <span className={`text-sm ${supabaseStatus?.success ? 'text-green-600' : 'text-red-600'}`}>
+                {testingSupabase ? '检测中' : supabaseStatus?.success ? '已连接' : supabaseStatus?.message || '未连接'}
               </span>
             </div>
           </div>
-          
-          {connectionStatus && !connectionStatus.success && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-700">{connectionStatus.message}</p>
+
+          {/* Claude AI */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Bot size={20} className="text-purple-600" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-700">Claude AI</p>
+                <p className="text-xs text-gray-400">Anthropic API</p>
+              </div>
             </div>
-          )}
-          
-          <button
-            onClick={testConnection}
-            disabled={testing}
-            className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            {testing ? '测试中...' : '重新测试连接'}
-          </button>
+            <div className="flex items-center gap-2">
+              {testingClaude ? (
+                <RefreshCw size={16} className="text-gray-400 animate-spin" />
+              ) : claudeStatus?.success ? (
+                <CheckCircle size={16} className="text-green-500" />
+              ) : (
+                <XCircle size={16} className="text-red-500" />
+              )}
+              <span className={`text-sm ${claudeStatus?.success ? 'text-green-600' : 'text-red-600'}`}>
+                {testingClaude ? '检测中' : claudeStatus?.success ? '已配置' : claudeStatus?.message || '未配置'}
+              </span>
+            </div>
+          </div>
+
+          {/* OneAPI */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
+                <Key size={20} className="text-rose-600" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-700">OneAPI</p>
+                <p className="text-xs text-gray-400">小红书数据同步</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {testingOneapi ? (
+                <RefreshCw size={16} className="text-gray-400 animate-spin" />
+              ) : oneapiStatus?.success ? (
+                <CheckCircle size={16} className="text-green-500" />
+              ) : (
+                <XCircle size={16} className="text-red-500" />
+              )}
+              <span className={`text-sm ${oneapiStatus?.success ? 'text-green-600' : 'text-amber-600'}`}>
+                {testingOneapi ? '检测中' : oneapiStatus?.success ? '已配置' : oneapiStatus?.message || '未配置'}
+              </span>
+            </div>
+          </div>
         </div>
         
         <div className="mt-4 pt-4 border-t">

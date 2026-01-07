@@ -165,6 +165,6 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
-    apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY 
+    configured: !!process.env.ANTHROPIC_API_KEY 
   })
 }
