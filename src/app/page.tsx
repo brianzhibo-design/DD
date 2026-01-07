@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Cat, BarChart3, Lightbulb, TrendingUp, Users, Heart, Bookmark, 
-  Sparkles, ArrowUpRight, Shirt, Palette, Gift, CheckCircle2, Plus, Palmtree,
+  Sparkles, ArrowUpRight, Shirt, Palette, Gift, CheckCircle2, Plus,
   PieChart, Bot, Loader2
 } from 'lucide-react';
 import { getLatestWeeklyStat } from '@/lib/db';
@@ -61,9 +61,6 @@ export default function Home() {
             <circle cx="150" cy="50" r="40" fill="white" fillOpacity="0.2" />
           </svg>
         </div>
-        <div className="absolute right-8 bottom-8 opacity-20">
-          <Shirt size={120} strokeWidth={1} />
-        </div>
         
         <div className="relative">
           <div className="flex items-center gap-2 mb-3">
@@ -71,9 +68,8 @@ export default function Home() {
             <span className="text-white/80 text-sm font-medium">小红书运营系统</span>
           </div>
           
-          <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 tracking-tight flex items-center gap-2 md:gap-3">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 tracking-tight">
             欢迎回来，岛岛！
-            <Palmtree size={28} className="text-white/90 md:w-9 md:h-9" />
           </h1>
           <p className="text-white/90 text-lg font-medium">
             内容创作 × 生活方式 × 精致分享
