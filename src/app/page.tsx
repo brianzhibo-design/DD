@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { 
   Users, Heart, Bookmark, MessageCircle, FileText, RefreshCw, 
-  ArrowUpRight, Sparkles
+  ArrowUpRight, Sparkles, MapPin, Clock, Share2
 } from 'lucide-react'
 
 interface AccountInfo {
@@ -27,7 +27,6 @@ interface WeeklyStats {
   saves: number
   comments: number
   shares: number
-  views: number
   posts_count: number
   female_ratio: number
 }
@@ -39,17 +38,30 @@ interface Note {
   likes: number
   collects: number
   comments: number
+  shares: number
   cover_image: string
   publish_date: string
+  ip_location: string
+}
+
+interface Comment {
+  id: string
+  note_id: string
+  user_nickname: string
+  user_avatar: string
+  content: string
+  like_count: number
+  ip_location: string
+  created_at: string
 }
 
 export default function HomePage() {
   const [account, setAccount] = useState<AccountInfo | null>(null)
   const [stats, setStats] = useState<WeeklyStats | null>(null)
   const [topNotes, setTopNotes] = useState<Note[]>([])
+  const [recentComments, setRecentComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
-  const [lastSync, setLastSync] = useState<string>('')
 
   const loadData = async () => {
     try {
@@ -60,9 +72,7 @@ export default function HomePage() {
         setAccount(data.data.account)
         setStats(data.data.latestStats)
         setTopNotes(data.data.topNotes || [])
-        if (data.data.account?.updated_at) {
-          setLastSync(new Date(data.data.account.updated_at).toLocaleString('zh-CN'))
-        }
+        setRecentComments(data.data.recentComments || [])
       }
     } catch (e) {
       console.error('加载数据失败:', e)
@@ -78,7 +88,7 @@ export default function HomePage() {
       
       if (data.success) {
         await loadData()
-        alert('同步成功！')
+        alert(`同步成功！\n笔记: ${data.data.stats.savedNotes} 篇\n评论: ${data.data.stats.savedComments} 条`)
       } else {
         alert('同步失败: ' + data.error)
       }
@@ -95,7 +105,18 @@ export default function HomePage() {
   const formatNumber = (num: number) => {
     if (num >= 10000) return (num / 10000).toFixed(1) + '万'
     if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
-    return num.toString()
+    return num?.toString() || '0'
+  }
+
+  const formatTime = (dateStr: string) => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    return date.toLocaleString('zh-CN', { 
+      month: 'numeric', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   if (loading) {
@@ -115,30 +136,41 @@ export default function HomePage() {
             <img 
               src={account.avatar} 
               alt={account.nickname}
-              className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 border-white shadow-lg"
+              className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-4 border-white shadow-lg"
             />
           ) : (
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#2D4B3E] flex items-center justify-center">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#2D4B3E] flex items-center justify-center border-4 border-white shadow-lg">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
           )}
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-[#1A2421] font-serif">
-              {account?.nickname || '小离岛岛'}
+              {account?.nickname || '小红书账号'}
             </h1>
-            <p className="text-sm text-[#6B7A74]">
-              小红书号: {account?.red_id || '-'} · {account?.ip_location || ''}
+            <p className="text-sm text-[#6B7A74] flex items-center gap-2 mt-1">
+              <span>小红书号: {account?.red_id || '-'}</span>
+              {account?.ip_location && (
+                <span className="flex items-center gap-1 text-[#9BA8A3]">
+                  <MapPin className="w-3 h-3" />
+                  {account.ip_location}
+                </span>
+              )}
             </p>
-            <p className="text-xs text-[#9BA8A3] mt-1 line-clamp-1 max-w-md">
-              {account?.description || ''}
-            </p>
+            {account?.description && (
+              <p className="text-xs text-[#9BA8A3] mt-1 line-clamp-1 max-w-md">
+                {account.description}
+              </p>
+            )}
           </div>
         </div>
         
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[#9BA8A3]">
-            {lastSync ? `上次同步: ${lastSync}` : ''}
-          </span>
+          {account?.updated_at && (
+            <span className="text-xs text-[#9BA8A3] flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {formatTime(account.updated_at)}
+            </span>
+          )}
           <button
             onClick={syncData}
             disabled={syncing}
@@ -164,9 +196,13 @@ export default function HomePage() {
           {stats?.new_followers ? (
             <div className="flex items-center gap-1 mt-2 text-xs text-emerald-300">
               <ArrowUpRight className="w-3 h-3" />
-              本周 +{stats.new_followers}
+              本周 +{formatNumber(stats.new_followers)}
             </div>
-          ) : null}
+          ) : (
+            <div className="text-xs text-white/40 mt-2">
+              关注 {account?.follows || 0}
+            </div>
+          )}
         </div>
 
         {/* 获赞数 */}
@@ -177,6 +213,9 @@ export default function HomePage() {
           </div>
           <div className="text-3xl font-black text-[#1A2421] font-serif">
             {formatNumber(account?.total_likes || 0)}
+          </div>
+          <div className="text-xs text-[#9BA8A3] mt-2">
+            篇均 {account?.notes_count ? formatNumber(Math.round((account.total_likes || 0) / account.notes_count)) : 0}
           </div>
         </div>
 
@@ -189,6 +228,9 @@ export default function HomePage() {
           <div className="text-3xl font-black text-[#1A2421] font-serif">
             {formatNumber(account?.total_collected || 0)}
           </div>
+          <div className="text-xs text-[#9BA8A3] mt-2">
+            篇均 {account?.notes_count ? formatNumber(Math.round((account.total_collected || 0) / account.notes_count)) : 0}
+          </div>
         </div>
 
         {/* 笔记数 */}
@@ -199,6 +241,9 @@ export default function HomePage() {
           </div>
           <div className="text-3xl font-black text-[#1A2421] font-serif">
             {account?.notes_count || 0}
+          </div>
+          <div className="text-xs text-[#9BA8A3] mt-2">
+            持续创作中
           </div>
         </div>
       </div>
@@ -213,14 +258,20 @@ export default function HomePage() {
           <div className="space-y-5">
             {/* 收藏率 */}
             <div>
-              <div className="flex justify-between items-center mb-1">
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-[#6B7A74]">收藏率（核心指标）</span>
                 <span className="text-sm font-bold text-[#2D4B3E]">
                   {account?.total_likes ? 
                     ((account.total_collected / account.total_likes) * 100).toFixed(1) : 0}%
                 </span>
               </div>
-              <div className="text-xs text-[#9BA8A3]">小红书核心指标，建议&gt;5%</div>
+              <div className="h-2 bg-[#F4F6F0] rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#2D4B3E] rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (account?.total_collected || 0) / (account?.total_likes || 1) * 100)}%` }}
+                />
+              </div>
+              <div className="text-xs text-[#9BA8A3] mt-1">收藏/点赞，建议&gt;5%</div>
             </div>
 
             {/* 互动率 */}
@@ -229,10 +280,10 @@ export default function HomePage() {
                 <span className="text-sm text-[#6B7A74]">互动率</span>
                 <span className="text-sm font-bold text-[#2D4B3E]">
                   {account?.fans ? 
-                    (((account.total_likes + account.total_collected) / account.fans) * 100).toFixed(1) : 0}%
+                    (((account.total_likes + account.total_collected) / account.fans) * 100).toFixed(0) : 0}%
                 </span>
               </div>
-              <div className="text-xs text-[#9BA8A3]">（点赞+收藏）/ 粉丝数</div>
+              <div className="text-xs text-[#9BA8A3]">（点赞+收藏）/ 粉丝</div>
             </div>
 
             {/* 粉赞比 */}
@@ -240,11 +291,11 @@ export default function HomePage() {
               <div className="flex justify-between items-center mb-1">
                 <span className="text-sm text-[#6B7A74]">粉赞比</span>
                 <span className="text-sm font-bold text-[#2D4B3E]">
-                  1:{account?.fans && account?.total_likes ? 
+                  1 : {account?.fans && account?.total_likes ? 
                     (account.total_likes / account.fans).toFixed(1) : 0}
                 </span>
               </div>
-              <div className="text-xs text-[#9BA8A3]">粉丝:获赞，越高说明内容质量越好</div>
+              <div className="text-xs text-[#9BA8A3]">粉丝:获赞，越高内容质量越好</div>
             </div>
 
             {/* 篇均数据 */}
@@ -277,32 +328,29 @@ export default function HomePage() {
                 key={note.id}
                 className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F4F6F0] transition-colors"
               >
-                {/* 排名 */}
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                   index < 3 ? 'bg-[#2D4B3E] text-white' : 'bg-[#F4F6F0] text-[#6B7A74]'
                 }`}>
                   {index + 1}
                 </div>
                 
-                {/* 封面 */}
                 {note.cover_image ? (
                   <img 
                     src={note.cover_image} 
                     alt={note.title}
-                    className="w-12 h-12 rounded-lg object-cover"
+                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-[#F4F6F0] flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-[#9BA8A3]" />
+                  <div className="w-14 h-14 rounded-lg bg-[#F4F6F0] flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-6 h-6 text-[#9BA8A3]" />
                   </div>
                 )}
                 
-                {/* 标题和数据 */}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-[#1A2421] truncate">
                     {note.title}
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-[#6B7A74]">
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-[#6B7A74]">
                     <span className="flex items-center gap-1">
                       <Heart className="w-3 h-3 text-rose-400" />
                       {formatNumber(note.likes)}
@@ -315,10 +363,24 @@ export default function HomePage() {
                       <MessageCircle className="w-3 h-3 text-[#2D4B3E]" />
                       {note.comments}
                     </span>
-                    <span className="text-[#9BA8A3]">
-                      {note.type}
-                    </span>
+                    {note.shares > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Share2 className="w-3 h-3 text-[#9BA8A3]" />
+                        {note.shares}
+                      </span>
+                    )}
                   </div>
+                </div>
+                
+                <div className="text-right flex-shrink-0">
+                  <span className="text-xs px-2 py-1 rounded-full bg-[#F4F6F0] text-[#6B7A74]">
+                    {note.type}
+                  </span>
+                  {note.publish_date && (
+                    <div className="text-xs text-[#9BA8A3] mt-1">
+                      {note.publish_date}
+                    </div>
+                  )}
                 </div>
               </div>
             )) : (
@@ -329,6 +391,56 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* 最新评论 */}
+      {recentComments.length > 0 && (
+        <div className="bg-white rounded-[2rem] p-6 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <h2 className="text-lg font-bold text-[#1A2421] mb-5 font-serif">最新评论</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {recentComments.slice(0, 6).map((comment) => (
+              <div 
+                key={comment.id}
+                className="flex gap-3 p-4 rounded-xl bg-[#FDFBF7] border border-[#2D4B3E]/5"
+              >
+                {comment.user_avatar ? (
+                  <img 
+                    src={comment.user_avatar} 
+                    alt={comment.user_nickname}
+                    className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-[#F4F6F0] flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-[#1A2421] truncate">
+                      {comment.user_nickname}
+                    </span>
+                    {comment.ip_location && (
+                      <span className="text-xs text-[#9BA8A3]">{comment.ip_location}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-[#6B7A74] line-clamp-2 mt-1">
+                    {comment.content}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-[#9BA8A3]">
+                    {comment.like_count > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        {comment.like_count}
+                      </span>
+                    )}
+                    {comment.created_at && (
+                      <span>{formatTime(comment.created_at)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 粉丝性别分布 */}
       <div className="bg-white rounded-[2rem] p-6 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -341,18 +453,18 @@ export default function HomePage() {
             </div>
             <div className="h-3 bg-[#F4F6F0] rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full"
+                className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all duration-500"
                 style={{ width: `${stats?.female_ratio || 85}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-[#6B7A74] mt-2">
-              <span>{stats?.female_ratio || 85}%</span>
-              <span>{100 - (stats?.female_ratio || 85)}%</span>
+            <div className="flex justify-between text-sm font-medium mt-2">
+              <span className="text-rose-500">{stats?.female_ratio || 85}%</span>
+              <span className="text-[#2D4B3E]">{100 - (stats?.female_ratio || 85)}%</span>
             </div>
           </div>
         </div>
         <p className="text-xs text-[#9BA8A3] mt-4">
-          * 根据小红书平台特征估算，精准数据需通过蒲公英平台获取
+          * 根据小红书平台特征估算，精准数据需通过蒲公英后台获取
         </p>
       </div>
     </div>
