@@ -2,7 +2,7 @@
 
 import { Cat } from '@/data/cats';
 import { useState } from 'react';
-import { X, Sparkles, Loader2, FileText, MessageSquare, Lightbulb, Check, XCircle, Save, Cat as CatIcon } from 'lucide-react';
+import { X, Sparkles, Loader2, FileText, MessageSquare, Lightbulb, Check, XCircle, Save, Cat as CatIcon, Camera, ImagePlus } from 'lucide-react';
 
 interface CatProfileEditorProps {
   cat: Cat;
@@ -80,6 +80,71 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
     });
   };
 
+  // 处理头像上传
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+      setError('请上传图片文件');
+      return;
+    }
+
+    // 检查文件大小 (最大2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('图片大小不能超过2MB');
+      return;
+    }
+
+    try {
+      // 压缩并转换为base64
+      const base64 = await compressImage(file, 200, 200);
+      setFormData(prev => ({ ...prev, avatar: base64 }));
+    } catch {
+      setError('图片处理失败，请重试');
+    }
+  };
+
+  // 压缩图片
+  const compressImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+
+          // 计算缩放比例
+          if (width > height) {
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = (width * maxHeight) / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // 输出为 JPEG 格式，质量 0.8
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -129,6 +194,41 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
           {mode === 'form' ? (
             /* 表单模式 */
             <div className="space-y-4">
+              {/* 头像上传 */}
+              <div className="flex justify-center">
+                <div className="relative">
+                  <div 
+                    className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg"
+                    style={{ backgroundColor: cat.color + '20' }}
+                  >
+                    {formData.avatar ? (
+                      <img 
+                        src={formData.avatar} 
+                        alt={cat.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <CatIcon size={40} style={{ color: cat.color }} />
+                      </div>
+                    )}
+                  </div>
+                  <label 
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors"
+                    style={{ backgroundColor: cat.color }}
+                  >
+                    <Camera size={16} className="text-white" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+              <p className="text-center text-xs text-gray-400">点击相机图标上传头像</p>
+
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700">昵称</label>
                 <input 

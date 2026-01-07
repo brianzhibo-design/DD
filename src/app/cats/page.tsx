@@ -34,6 +34,7 @@ export default function CatsPage() {
               personality: dbCat.personality || cat.personality,
               appearance: dbCat.color || cat.appearance,
               notes: dbCat.breed || cat.notes, // breed -> notes (品种)
+              avatar: dbCat.avatar || cat.avatar,
             };
           }
           return cat;
@@ -63,6 +64,7 @@ export default function CatsPage() {
           personality: updatedCat.personality || '',
           color: updatedCat.appearance || '',
           breed: updatedCat.notes || '', // notes -> breed (品种)
+          avatar: updatedCat.avatar || '',
         });
         console.log('[Cats] Update result:', result);
       } else {

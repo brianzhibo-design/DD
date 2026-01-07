@@ -22,12 +22,20 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
       {/* 头部 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div 
-            className="w-14 h-14 rounded-full flex items-center justify-center shadow-sm"
-            style={{ backgroundColor: cat.color + '30' }}
-          >
-            <Cat size={24} style={{ color: cat.color }} />
-          </div>
+          {cat.avatar ? (
+            <img 
+              src={cat.avatar} 
+              alt={cat.name}
+              className="w-14 h-14 rounded-full object-cover shadow-sm border-2 border-white"
+            />
+          ) : (
+            <div 
+              className="w-14 h-14 rounded-full flex items-center justify-center shadow-sm"
+              style={{ backgroundColor: cat.color + '30' }}
+            >
+              <Cat size={24} style={{ color: cat.color }} />
+            </div>
+          )}
           <div>
             <h3 className="font-bold text-lg" style={{ color: cat.color }}>
               {cat.name}

@@ -54,6 +54,7 @@ export interface CatRecord {
   gender?: string       // 性别
   personality?: string  // 性格标签
   appearance_count?: number  // 出镜次数
+  avatar?: string       // base64 头像
   created_at?: string
   updated_at?: string
 }

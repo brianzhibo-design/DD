@@ -11,6 +11,7 @@ export interface Cat {
   contentTags?: string[];
   bestContentType?: string;
   notes?: string;
+  avatar?: string;  // base64 图片
   createdAt?: Date;
   updatedAt?: Date;
 }
