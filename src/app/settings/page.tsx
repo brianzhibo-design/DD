@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap, Camera, User, Lock, Eye, EyeOff, Shield, LogOut, Check } from 'lucide-react';
+import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap, Camera, User, Lock, Eye, EyeOff, Shield, LogOut, Check, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { testSupabaseConnection } from '@/lib/db';
 import { getUserProfile, saveUserProfile, compressImage, UserProfile, loadUserProfile } from '@/lib/user-profile';
@@ -80,14 +80,11 @@ export default function SettingsPage() {
     testOneapi();
   };
 
-  // 加载用户资料
   useEffect(() => {
-    // 先显示缓存
     const cached = getUserProfile();
     setUserProfile(cached);
     setNickname(cached.nickname || '');
     
-    // 然后从 Supabase 加载
     loadUserProfile().then(profile => {
       setUserProfile(profile);
       setNickname(profile.nickname || '');
@@ -98,7 +95,6 @@ export default function SettingsPage() {
     testAllConnections();
   }, []);
 
-  // 处理头像上传
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -127,7 +123,6 @@ export default function SettingsPage() {
     }
   };
 
-  // 保存昵称
   const handleSaveNickname = async () => {
     const updated = { ...userProfile, nickname };
     const success = await saveUserProfile(updated);
@@ -139,7 +134,6 @@ export default function SettingsPage() {
     }
   };
 
-  // 修改密码
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMessage(null);
@@ -185,7 +179,6 @@ export default function SettingsPage() {
     setPasswordLoading(false);
   };
 
-  // 退出登录
   const handleLogout = async () => {
     if (confirm('确定要退出登录吗？')) {
       await fetch('/api/auth', { method: 'DELETE' });
@@ -196,24 +189,23 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
-          <Settings size={24} className="text-slate-600" />
+        <h1 className="text-2xl font-bold text-[#2D3A30] mb-2 flex items-center gap-2">
+          <Settings size={24} className="text-[#4A6741]" />
           系统设置
         </h1>
-        <p className="text-slate-500 text-sm">管理个人资料和系统配置</p>
+        <p className="text-[#7D8A80]">管理个人资料和系统配置</p>
       </div>
 
       {/* 个人资料 */}
-      <div className="bg-white rounded-xl p-6 border border-slate-100 mb-4">
-        <h2 className="font-bold text-slate-800 mb-5 flex items-center gap-2">
-          <User size={18} className="text-slate-600" />
+      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
+        <h2 className="font-bold text-[#2D3A30] mb-4 flex items-center gap-2">
+          <User size={18} className="text-[#4A6741]" />
           个人资料
         </h2>
         
         <div className="flex flex-col sm:flex-row items-center gap-6">
-          {/* 头像 */}
           <div className="relative">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-slate-100 ring-2 ring-white shadow-md">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-[#F4F6F0] border-4 border-white shadow-lg">
               {userProfile.avatar ? (
                 <img 
                   src={userProfile.avatar} 
@@ -222,12 +214,12 @@ export default function SettingsPage() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <User size={32} className="text-slate-300" />
+                  <User size={40} className="text-[#9CA89F]" />
                 </div>
               )}
             </div>
-            <label className="absolute bottom-0 right-0 w-7 h-7 bg-slate-900 rounded-full flex items-center justify-center cursor-pointer hover:bg-black transition-colors shadow-lg shadow-slate-200">
-              <Camera size={14} className="text-white" />
+            <label className="absolute bottom-0 right-0 w-8 h-8 bg-[#4A6741] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#3A5233] transition-colors shadow-md">
+              <Camera size={16} className="text-white" />
               <input
                 type="file"
                 accept="image/*"
@@ -237,40 +229,39 @@ export default function SettingsPage() {
             </label>
           </div>
 
-          {/* 昵称 */}
           <div className="flex-1 w-full sm:w-auto">
-            <label className="block text-xs font-medium text-slate-500 mb-2">昵称</label>
+            <label className="block text-sm font-medium text-[#2D3A30] mb-2">昵称</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 placeholder="输入你的昵称"
-                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/5 focus:border-slate-400 outline-none text-sm"
+                className="flex-1 px-4 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] outline-none text-[#2D3A30] bg-white"
               />
               <button
                 onClick={handleSaveNickname}
-                className="px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-black transition-colors text-sm font-medium shadow-lg shadow-slate-200"
+                className="px-4 py-2 bg-[#4A6741] text-white rounded-lg hover:bg-[#3A5233] transition-colors shadow-sm"
               >
                 保存
               </button>
             </div>
-            <p className="text-xs text-slate-400 mt-2">头像和昵称将显示在侧边栏和首页</p>
+            <p className="text-xs text-[#7D8A80] mt-2">头像和昵称将显示在侧边栏和首页</p>
           </div>
         </div>
       </div>
       
       {/* 服务连接状态 */}
-      <div className="bg-white rounded-xl p-6 border border-slate-100 mb-4">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-bold text-slate-800 flex items-center gap-2">
-            <Zap size={18} className="text-slate-600" />
+      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-[#2D3A30] flex items-center gap-2">
+            <Zap size={18} className="text-[#4A6741]" />
             服务连接状态
           </h2>
           <button
             onClick={testAllConnections}
             disabled={testingSupabase || testingClaude || testingOneapi}
-            className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1 disabled:opacity-50 transition-colors"
+            className="text-sm text-[#7D8A80] hover:text-[#4A6741] flex items-center gap-1 disabled:opacity-50"
           >
             <RefreshCw size={14} className={(testingSupabase || testingClaude || testingOneapi) ? 'animate-spin' : ''} />
             刷新
@@ -279,220 +270,145 @@ export default function SettingsPage() {
         
         <div className="space-y-3">
           {/* Supabase */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-[#F4F6F0] rounded-lg">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Database size={18} className="text-slate-600" />
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                <Database size={20} className="text-[#4A6741]" />
               </div>
               <div>
-                <p className="font-medium text-slate-700 text-sm">Supabase</p>
-                <p className="text-xs text-slate-400">PostgreSQL 云数据库</p>
+                <p className="font-medium text-[#2D3A30]">Supabase</p>
+                <p className="text-xs text-[#7D8A80]">PostgreSQL 云数据库</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {testingSupabase ? (
-                <RefreshCw size={16} className="text-slate-400 animate-spin" />
+                <RefreshCw size={16} className="text-[#7D8A80] animate-spin" />
               ) : supabaseStatus?.success ? (
-                <CheckCircle size={16} className="text-emerald-500" />
+                <CheckCircle size={16} className="text-[#4A6741]" />
               ) : (
-                <XCircle size={16} className="text-red-500" />
+                <XCircle size={16} className="text-[#C75050]" />
               )}
-              <span className={`text-sm ${supabaseStatus?.success ? 'text-green-600' : 'text-red-600'}`}>
-                {testingSupabase ? '检测中' : supabaseStatus?.success ? '已连接' : supabaseStatus?.message || '未连接'}
+              <span className={`text-sm ${supabaseStatus?.success ? 'text-[#4A6741]' : 'text-[#C75050]'}`}>
+                {testingSupabase ? '检测中...' : supabaseStatus?.message}
               </span>
             </div>
           </div>
 
           {/* Claude AI */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-[#F4F6F0] rounded-lg">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Bot size={20} className="text-purple-600" />
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                <Bot size={20} className="text-[#4A6741]" />
               </div>
               <div>
-                <p className="font-medium text-gray-700">Claude AI</p>
-                <p className="text-xs text-gray-400">Anthropic API</p>
+                <p className="font-medium text-[#2D3A30]">Claude AI</p>
+                <p className="text-xs text-[#7D8A80]">Anthropic API Key</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {testingClaude ? (
-                <RefreshCw size={16} className="text-gray-400 animate-spin" />
+                <RefreshCw size={16} className="text-[#7D8A80] animate-spin" />
               ) : claudeStatus?.success ? (
-                <CheckCircle size={16} className="text-green-500" />
+                <CheckCircle size={16} className="text-[#4A6741]" />
               ) : (
-                <XCircle size={16} className="text-red-500" />
+                <XCircle size={16} className="text-[#C75050]" />
               )}
-              <span className={`text-sm ${claudeStatus?.success ? 'text-green-600' : 'text-red-600'}`}>
-                {testingClaude ? '检测中' : claudeStatus?.success ? '已配置' : claudeStatus?.message || '未配置'}
+              <span className={`text-sm ${claudeStatus?.success ? 'text-[#4A6741]' : 'text-[#C75050]'}`}>
+                {testingClaude ? '检测中...' : claudeStatus?.message}
               </span>
             </div>
           </div>
 
           {/* OneAPI */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-[#F4F6F0] rounded-lg">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
-                <Key size={20} className="text-rose-600" />
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                <Key size={20} className="text-[#4A6741]" />
               </div>
               <div>
-                <p className="font-medium text-gray-700">OneAPI</p>
-                <p className="text-xs text-gray-400">小红书数据同步</p>
+                <p className="font-medium text-[#2D3A30]">OneAPI 小红书</p>
+                <p className="text-xs text-[#7D8A80]">数据同步服务</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {testingOneapi ? (
-                <RefreshCw size={16} className="text-gray-400 animate-spin" />
+                <RefreshCw size={16} className="text-[#7D8A80] animate-spin" />
               ) : oneapiStatus?.success ? (
-                <CheckCircle size={16} className="text-green-500" />
+                <CheckCircle size={16} className="text-[#4A6741]" />
               ) : (
-                <XCircle size={16} className="text-red-500" />
+                <XCircle size={16} className="text-[#C75050]" />
               )}
-              <span className={`text-sm ${oneapiStatus?.success ? 'text-green-600' : 'text-amber-600'}`}>
-                {testingOneapi ? '检测中' : oneapiStatus?.success ? '已配置' : oneapiStatus?.message || '未配置'}
+              <span className={`text-sm ${oneapiStatus?.success ? 'text-[#4A6741]' : 'text-[#C75050]'}`}>
+                {testingOneapi ? '检测中...' : oneapiStatus?.message}
               </span>
             </div>
           </div>
         </div>
-        
-        <div className="mt-4 pt-4 border-t">
-          <p className="text-sm text-gray-500 mb-2">数据存储位置：</p>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-gray-700">周统计数据</span>
-              <span className="text-xs text-green-600 font-medium">Supabase: weekly_stats</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-gray-700">猫咪档案</span>
-              <span className="text-xs text-green-600 font-medium">Supabase: cats</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <span className="text-gray-700">笔记数据</span>
-              <span className="text-xs text-green-600 font-medium">Supabase: notes</span>
-            </div>
-          </div>
-        </div>
       </div>
-      
-      {/* API Configuration */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
-        <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Key size={18} className="text-amber-500" />
-          API 配置
-        </h2>
-        <div className="bg-amber-50 rounded-lg p-4 mb-4">
-          <p className="text-sm text-amber-800">
-            AI功能需要配置以下环境变量（在 Netlify 中设置）：
-          </p>
-          <pre className="mt-2 bg-amber-100 p-3 rounded text-xs text-amber-900 overflow-x-auto">
-{`ANTHROPIC_API_KEY=sk-ant-...
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...`}
-          </pre>
-        </div>
-        <div className="flex gap-4">
-          <a 
-            href="https://console.anthropic.com/" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-500 hover:text-slate-900 text-sm underline"
-          >
-            获取 Claude API Key
-          </a>
-          <a 
-            href="https://supabase.com/dashboard" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-green-500 hover:text-green-600 text-sm"
-          >
-            Supabase Dashboard
-          </a>
-        </div>
-      </div>
-      
-      {/* Data Info */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
-        <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <AlertTriangle size={18} className="text-amber-500" />
-          注意事项
-        </h2>
-        <ul className="text-sm text-gray-600 space-y-2">
-          <li>• 所有数据存储在 Supabase 云数据库中</li>
-          <li>• 数据会自动同步，无需手动备份</li>
-          <li>• 如需删除数据，请在 Supabase Dashboard 中操作</li>
-          <li>• 确保 Netlify 环境变量配置正确</li>
-        </ul>
-      </div>
-      
+
       {/* 修改密码 */}
-      <div className="bg-white rounded-xl p-6 border border-slate-100 mb-4">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
-            <Shield size={18} className="text-slate-600" />
+      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-[#F4F6F0] rounded-lg flex items-center justify-center">
+            <Shield size={18} className="text-[#4A6741]" />
           </div>
           <div>
-            <h2 className="font-bold text-slate-800 text-sm">修改密码</h2>
-            <p className="text-xs text-slate-400">定期更换密码保护账户安全</p>
+            <h2 className="font-bold text-[#2D3A30]">修改密码</h2>
+            <p className="text-sm text-[#7D8A80]">定期更换密码保护账户安全</p>
           </div>
         </div>
 
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">当前密码</label>
+            <label htmlFor="current-password" className="block text-sm font-medium text-[#2D3A30] mb-2">当前密码</label>
             <div className="relative">
               <input
+                id="current-password"
                 type={showPasswords ? 'text' : 'password'}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5 transition-all text-sm"
+                className="w-full bg-white border border-[#E2E8D5] rounded-xl px-4 py-3 pr-12 outline-none focus:border-[#4A6741] focus:ring-2 focus:ring-[#4A6741]/20 transition-all text-[#2D3A30]"
                 placeholder="输入当前密码"
               />
-              <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+              <button
+                type="button"
+                onClick={() => setShowPasswords(!showPasswords)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#7D8A80] hover:text-[#4A6741]"
+              >
+                {showPasswords ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">新密码</label>
+            <label htmlFor="new-password" className="block text-sm font-medium text-[#2D3A30] mb-2">新密码</label>
             <input
+              id="new-password"
               type={showPasswords ? 'text' : 'password'}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5 transition-all text-sm"
-              placeholder="输入新密码（至少6位）"
+              className="w-full bg-white border border-[#E2E8D5] rounded-xl px-4 py-3 outline-none focus:border-[#4A6741] focus:ring-2 focus:ring-[#4A6741]/20 transition-all text-[#2D3A30]"
+              placeholder="输入新密码 (至少6位)"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">确认新密码</label>
-            <div className="relative">
-              <input
-                type={showPasswords ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5 transition-all text-sm"
-                placeholder="再次输入新密码"
-              />
-              {newPassword && confirmPassword && newPassword === confirmPassword && (
-                <Check className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
-              )}
-            </div>
+            <label htmlFor="confirm-password" className="block text-sm font-medium text-[#2D3A30] mb-2">确认新密码</label>
+            <input
+              id="confirm-password"
+              type={showPasswords ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full bg-white border border-[#E2E8D5] rounded-xl px-4 py-3 outline-none focus:border-[#4A6741] focus:ring-2 focus:ring-[#4A6741]/20 transition-all text-[#2D3A30]"
+              placeholder="再次输入新密码"
+            />
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showPasswords}
-              onChange={(e) => setShowPasswords(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-            />
-            <span className="text-sm text-gray-600">显示密码</span>
-          </label>
-
           {passwordMessage && (
-            <div className={`p-3 rounded-xl text-sm ${
-              passwordMessage.type === 'success' 
-                ? 'bg-green-50 text-green-600' 
-                : 'bg-red-50 text-red-600'
+            <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+              passwordMessage.type === 'success' ? 'bg-[#4A6741]/10 text-[#4A6741] border border-[#4A6741]/20' : 'bg-[#C75050]/10 text-[#C75050] border border-[#C75050]/20'
             }`}>
+              {passwordMessage.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
               {passwordMessage.text}
             </div>
           )}
@@ -500,39 +416,46 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...`}
           <button
             type="submit"
             disabled={passwordLoading}
-            className="w-full bg-slate-900 hover:bg-black text-white font-medium py-3 rounded-lg shadow-lg shadow-slate-200 transition-all disabled:opacity-50"
+            className="w-full bg-[#4A6741] text-white font-semibold py-3 rounded-xl shadow-lg hover:bg-[#3A5233] transition-all disabled:opacity-50"
           >
-            {passwordLoading ? '保存中...' : '保存新密码'}
+            {passwordLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 size={20} className="animate-spin" />
+                修改中...
+              </span>
+            ) : (
+              '修改密码'
+            )}
           </button>
         </form>
       </div>
 
       {/* 退出登录 */}
-      <div className="bg-white rounded-xl p-6 border border-slate-100 mb-4">
+      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
-              <LogOut size={18} className="text-slate-500" />
+            <div className="w-10 h-10 bg-[#F4F6F0] rounded-xl flex items-center justify-center">
+              <LogOut size={20} className="text-[#7D8A80]" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-800 text-sm">退出登录</h2>
-              <p className="text-xs text-slate-400">退出当前账户</p>
+              <h2 className="font-bold text-[#2D3A30]">退出登录</h2>
+              <p className="text-sm text-[#7D8A80]">退出当前账户</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium"
+            className="px-5 py-2.5 bg-[#C75050] text-white rounded-xl hover:bg-[#B04545] transition-colors shadow-lg"
           >
             退出
           </button>
         </div>
       </div>
 
-      {/* About */}
-      <div className="mt-8 text-center text-sm text-gray-400">
+      {/* 关于 */}
+      <div className="mt-8 text-center text-sm text-[#7D8A80]">
         <p>小离岛岛 · 小红书运营系统</p>
         <p className="mt-1">内容创作 × 生活方式 × 精致分享</p>
-        <p className="mt-2">Powered by Claude Sonnet 4.5 + Supabase</p>
+        <p className="mt-2">Powered by Claude + Supabase</p>
       </div>
     </div>
   );

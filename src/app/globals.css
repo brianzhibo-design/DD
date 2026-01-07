@@ -2,70 +2,42 @@
 
 /* ============================================
    小离岛岛 · 内容运营系统
-   Design: 极简白色 + 黑色点缀
-   Style: Minimalist White
+   Design: 复古乳绿 (Retro Cream Green)
    ============================================ */
 
 :root {
   /* ===== 字体系统 ===== */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Source Han Sans CN', sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
   
-  /* ===== 间距系统 (8px 基准) ===== */
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-5: 1.25rem;   /* 20px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
+  /* ===== 复古乳绿配色 ===== */
+  --color-bg: #FDFBF7;           /* 乳白色背景 */
+  --color-card: #FFFFFF;         /* 纯白卡片 */
+  --color-border: #E2E8D5;       /* 浅绿边框 */
+  --color-border-hover: #D5DCC8;
   
-  /* ===== 字体大小系统 ===== */
-  --text-xs: 0.75rem;     /* 12px */
-  --text-sm: 0.8125rem;   /* 13px */
-  --text-base: 0.875rem;  /* 14px */
-  --text-lg: 1rem;        /* 16px */
-  --text-xl: 1.125rem;    /* 18px */
-  --text-2xl: 1.5rem;     /* 24px */
-  --text-3xl: 1.875rem;   /* 30px */
+  --color-text: #2D3A30;         /* 深绿文字 */
+  --color-text-secondary: #7D8A80; /* 灰绿次要文字 */
+  --color-text-muted: #9CA89F;
   
-  /* ===== 极简色系 ===== */
-  --color-bg: #FAFAFA;
-  --color-card: #FFFFFF;
-  --color-border: #f1f5f9;
-  --color-border-hover: #e2e8f0;
+  --color-accent: #4A6741;       /* 复古深绿强调色 */
+  --color-accent-hover: #3A5233;
   
-  --color-text: #0f172a;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
-  --color-text-placeholder: #cbd5e1;
+  --color-sidebar: #F4F6F0;      /* 侧边栏浅绿灰 */
   
-  --color-accent: #0f172a;
-  --color-accent-hover: #000000;
-  
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  --color-success: #4A6741;
+  --color-warning: #B8860B;
+  --color-danger: #C75050;
   
   /* ===== 圆角 ===== */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-2xl: 20px;
   
   /* ===== 阴影 ===== */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
-  --shadow-button: 0 4px 12px rgba(15, 23, 42, 0.15);
-  
-  /* ===== 动效 ===== */
-  --transition-fast: 150ms;
-  --transition-normal: 200ms;
-  --transition-slow: 300ms;
+  --shadow-sm: 0 1px 2px rgba(45, 58, 48, 0.04);
+  --shadow-md: 0 4px 6px rgba(45, 58, 48, 0.06);
+  --shadow-lg: 0 10px 20px rgba(45, 58, 48, 0.08);
 }
 
 @theme inline {
@@ -74,13 +46,12 @@
   --font-sans: var(--font-sans);
 }
 
-/* ===== 全局字体平滑 ===== */
+/* ===== 全局样式 ===== */
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===== 基础样式 ===== */
 html {
   scroll-behavior: smooth;
 }
@@ -89,51 +60,16 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: var(--text-base);
+  font-size: 0.875rem;
   line-height: 1.5;
   min-height: 100vh;
   min-height: 100dvh;
 }
 
 /* ===== 排版 ===== */
-h1 {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-h2 {
-  font-size: var(--text-xl);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-h3 {
-  font-size: var(--text-lg);
-  font-weight: 600;
-}
-
-p {
-  /* 继承父元素颜色 */
-}
-
-/* ===== 输入框 ===== */
-input, textarea, select {
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--color-text-placeholder);
-}
-
-/* ===== 按钮 ===== */
-button {
-  font-family: var(--font-sans);
-  font-weight: 500;
-  cursor: pointer;
-}
+h1 { font-size: 1.5rem; font-weight: 700; }
+h2 { font-size: 1.125rem; font-weight: 600; }
+h3 { font-size: 1rem; font-weight: 600; }
 
 /* ===== 滚动条 ===== */
 ::-webkit-scrollbar {
@@ -146,167 +82,23 @@ button {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: var(--color-border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+  background: var(--color-border-hover);
 }
 
 /* ===== 选中文本 ===== */
 ::selection {
-  background: #0f172a;
-  color: white;
-}
-
-/* ===== 卡片组件 ===== */
-.card {
-  background: var(--color-card);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal) ease;
-}
-
-.card:hover {
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-md);
-}
-
-/* ===== 渐变文字（保留用于强调） ===== */
-.text-gradient {
-  background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ===== 玻璃态 ===== */
-.glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.glass-strong {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--color-border);
-}
-
-/* ===== 标准按钮 ===== */
-.btn-primary {
   background: var(--color-accent);
   color: white;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-  transition: all var(--transition-normal) ease;
-  box-shadow: var(--shadow-button);
 }
 
-.btn-primary:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-secondary {
-  background: transparent;
-  border: 1px solid var(--color-border-hover);
-  color: var(--color-text-secondary);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-normal) ease;
-}
-
-.btn-secondary:hover {
-  background: #f8fafc;
-  color: var(--color-text);
-}
-
-/* ===== 输入框样式 ===== */
-.input-field {
-  width: 100%;
-  background: var(--color-card);
-  border: 1px solid var(--color-border-hover);
-  border-radius: var(--radius-md);
-  padding: 0.75rem 1rem;
-  color: var(--color-text);
-  transition: all var(--transition-normal) ease;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.05);
-}
-
-/* ===== 统计卡片 ===== */
-.stat-card {
-  background: var(--color-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  padding: 1.5rem;
-  transition: all var(--transition-normal) ease;
-}
-
-.stat-card:hover {
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-card-dark {
-  background: #0f172a;
-  color: white;
-  border: none;
-  box-shadow: var(--shadow-xl);
-}
-
-/* ===== 导航项 ===== */
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  transition: all var(--transition-normal) ease;
-}
-
-.nav-item:hover {
-  background: #f8fafc;
-  color: var(--color-text);
-}
-
-.nav-item-active {
-  background: #f1f5f9;
-  color: var(--color-text);
-  font-weight: 500;
-}
-
-/* ===== 趋势标签 ===== */
-.trend-up {
-  color: #10b981;
-  background: #ecfdf5;
-}
-
-.trend-down {
-  color: #ef4444;
-  background: #fef2f2;
-}
-
-/* ===== 响应式触摸目标 ===== */
+/* ===== 移动端触摸 ===== */
 @media (max-width: 1023px) {
-  button,
-  a,
-  input[type="button"],
-  input[type="submit"],
-  [role="button"] {
+  button, a, [role="button"] {
     min-height: 44px;
   }
   
@@ -324,11 +116,7 @@ button {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
-.pt-safe {
-  padding-top: max(0.5rem, env(safe-area-inset-top));
-}
-
-/* ===== 打字指示器 ===== */
+/* ===== 动画 ===== */
 @keyframes typing-bounce {
   0%, 60%, 100% { transform: translateY(0); }
   30% { transform: translateY(-4px); }
@@ -338,7 +126,7 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #94a3b8;
+  background: var(--color-text-secondary);
   animation: typing-bounce 1.4s ease-in-out infinite;
 }
 
@@ -346,7 +134,6 @@ button {
 .typing-dot:nth-child(2) { animation-delay: 160ms; }
 .typing-dot:nth-child(3) { animation-delay: 320ms; }
 
-/* ===== 消息动画 ===== */
 @keyframes message-appear {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -356,19 +143,10 @@ button {
   animation: message-appear 0.2s ease-out forwards;
 }
 
-/* ===== 深色模式准备 ===== */
-@media (prefers-color-scheme: dark) {
-  /* 暂时保持浅色模式 */
-}
-
 /* ===== Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }

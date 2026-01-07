@@ -21,19 +21,17 @@ export default function CatsPage() {
     setLoading(true);
     try {
       const dbCats = await getCats();
-      console.log('[Cats] Loaded from DB:', dbCats);
       
       if (dbCats.length > 0) {
-        // 合并数据库数据和初始数据
         const mergedCats = initialCats.map(cat => {
           const dbCat = dbCats.find((c: CatRecord) => c.name === cat.name);
           if (dbCat) {
             return {
               ...cat,
-              dbId: dbCat.id, // 保存数据库ID
+              dbId: dbCat.id,
               personality: dbCat.personality || cat.personality,
               appearance: dbCat.color || cat.appearance,
-              notes: dbCat.breed || cat.notes, // breed -> notes (品种)
+              notes: dbCat.breed || cat.notes,
               avatar: dbCat.avatar || cat.avatar,
             };
           }
@@ -49,7 +47,6 @@ export default function CatsPage() {
   
   const handleSaveCat = async (updatedCat: Cat) => {
     try {
-      // 使用保存的数据库ID，或重新查找
       let dbId = (updatedCat as Cat & { dbId?: string }).dbId;
       
       if (!dbId) {
@@ -59,19 +56,14 @@ export default function CatsPage() {
       }
       
       if (dbId) {
-        // 更新数据库中存在的字段
-        const result = await updateCat(dbId, {
+        await updateCat(dbId, {
           personality: updatedCat.personality || '',
           color: updatedCat.appearance || '',
-          breed: updatedCat.notes || '', // notes -> breed (品种)
+          breed: updatedCat.notes || '',
           avatar: updatedCat.avatar || '',
         });
-        console.log('[Cats] Update result:', result);
-      } else {
-        console.error('[Cats] No DB record found for:', updatedCat.name);
       }
       
-      // 更新本地状态
       setCats(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
       setEditingCat(null);
     } catch (error) {
@@ -84,7 +76,7 @@ export default function CatsPage() {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto flex items-center justify-center py-20">
-        <Loader2 size={32} className="animate-spin text-slate-400" />
+        <Loader2 size={32} className="animate-spin text-[#7D8A80]" />
       </div>
     );
   }
@@ -93,28 +85,28 @@ export default function CatsPage() {
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
-          <CatIcon size={22} className="text-slate-600" />
+        <h1 className="text-2xl font-bold text-[#2D3A30] mb-2 flex items-center gap-2">
+          <CatIcon size={22} className="text-[#4A6741]" />
           六只猫档案
         </h1>
-        <p className="text-slate-500 text-sm">管理猫咪信息，偶尔出镜增加记忆点（5公1母，多为长毛猫）</p>
+        <p className="text-[#7D8A80] text-sm">管理猫咪信息，偶尔出镜增加记忆点（5公1母，多为长毛猫）</p>
       </div>
       
       {/* Progress */}
-      <div className="bg-white rounded-xl p-5 border border-slate-100 mb-5">
+      <div className="bg-white rounded-xl p-5 border border-[#E2E8D5] mb-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-slate-700">档案完善进度</span>
-          <span className="text-sm text-slate-500">{completedCount}/6 只已完善</span>
+          <span className="text-sm font-medium text-[#2D3A30]">档案完善进度</span>
+          <span className="text-sm text-[#7D8A80]">{completedCount}/6 只已完善</span>
         </div>
-        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-2 bg-[#F4F6F0] rounded-full overflow-hidden">
           <div 
-            className="h-full bg-slate-900 rounded-full transition-all"
+            className="h-full bg-[#4A6741] rounded-full transition-all"
             style={{ width: `${(completedCount / 6) * 100}%` }}
           />
         </div>
         {completedCount < 6 && (
-          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-            <Lightbulb size={14} className="text-slate-400" />
+          <p className="text-xs text-[#7D8A80] mt-2 flex items-center gap-1">
+            <Lightbulb size={14} className="text-[#7D8A80]" />
             点击猫咪卡片的编辑按钮，可以手动填写或使用AI对话录入信息
           </p>
         )}
@@ -133,12 +125,12 @@ export default function CatsPage() {
       </div>
       
       {/* Tips */}
-      <div className="mt-6 bg-slate-50 rounded-xl p-5 border border-slate-100">
-        <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2 text-sm">
-          <Sparkles size={16} className="text-slate-600" />
+      <div className="mt-6 bg-[#F4F6F0] rounded-xl p-5 border border-[#E2E8D5]">
+        <h3 className="font-bold text-[#2D3A30] mb-3 flex items-center gap-2 text-sm">
+          <Sparkles size={16} className="text-[#4A6741]" />
           猫咪出镜建议
         </h3>
-        <ul className="text-sm text-slate-600 space-y-2">
+        <ul className="text-sm text-[#7D8A80] space-y-2">
           <li>• 猫咪是加分项，偶尔出镜增加记忆点，不要喧宾夺主</li>
           <li>• 可以拍摄"居家日常+猫咪"、"生活vlog"等内容</li>
           <li>• 熊崽是缅因猫体型大，可以做对比内容亮点</li>

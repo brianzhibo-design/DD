@@ -34,18 +34,18 @@ export default function MobileHeader() {
   return (
     <header className="sticky top-0 z-30 lg:hidden">
       {/* 背景 */}
-      <div className="absolute inset-0 bg-white border-b border-slate-100" />
+      <div className="absolute inset-0 bg-[#F4F6F0] border-b border-[#E2E8D5]" />
       
       {/* 内容 */}
       <div className="relative flex items-center justify-between px-4 py-3 min-h-[56px]">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shadow-md shadow-slate-200">
+          <div className="w-8 h-8 bg-[#4A6741] rounded-lg flex items-center justify-center shadow-md">
             <Sparkles size={16} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-900">{pageName}</p>
-            <p className="text-[10px] text-slate-400">{userProfile.nickname || '小离岛岛'}</p>
+            <p className="text-sm font-bold text-[#2D3A30]">{pageName}</p>
+            <p className="text-[10px] text-[#7D8A80]">{userProfile.nickname || '小离岛岛'}</p>
           </div>
         </div>
 
@@ -58,8 +58,8 @@ export default function MobileHeader() {
               className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-              <User size={16} className="text-slate-400" />
+            <div className="w-8 h-8 rounded-full bg-[#E2E8D5] flex items-center justify-center">
+              <User size={16} className="text-[#7D8A80]" />
             </div>
           )}
         </div>

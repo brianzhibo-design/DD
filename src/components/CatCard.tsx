@@ -16,7 +16,7 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
   const hasProfile = cat.personality || (cat.traits && cat.traits.length > 0);
   
   return (
-    <div className="bg-white rounded-xl p-5 transition-all hover:shadow-md border border-slate-100 hover:border-slate-200">
+    <div className="bg-white rounded-xl p-5 transition-all hover:shadow-md border border-[#E2E8D5] hover:border-[#4A6741]/30">
       {/* 头部 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -27,15 +27,15 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
               className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-sm"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-100">
-              <Cat size={22} className="text-slate-500" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-[#F4F6F0]">
+              <Cat size={22} className="text-[#4A6741]" />
             </div>
           )}
           <div>
-            <h3 className="font-semibold text-slate-900">
+            <h3 className="font-semibold text-[#2D3A30]">
               {cat.name}
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[#7D8A80]">
               {cat.gender} · {cat.appearance}
             </p>
           </div>
@@ -47,9 +47,9 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
               e.stopPropagation();
               onEdit();
             }}
-            className="p-2 hover:bg-slate-50 rounded-lg transition-colors"
+            className="p-2 hover:bg-[#F4F6F0] rounded-lg transition-colors"
           >
-            <Edit2 size={14} className="text-slate-400" />
+            <Edit2 size={14} className="text-[#7D8A80]" />
           </button>
         )}
       </div>
@@ -57,7 +57,7 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
       {/* 性格标签 */}
       {cat.personality && (
         <div className="mb-3">
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-slate-900 text-white">
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[#4A6741] text-white">
             {cat.personality}
           </span>
         </div>
@@ -69,7 +69,7 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
           {cat.traits.map(trait => (
             <span 
               key={trait}
-              className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600"
+              className="text-xs px-2 py-1 rounded-full bg-[#F4F6F0] text-[#4A6741]"
             >
               {trait}
             </span>
@@ -79,8 +79,8 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
       
       {/* 未完善提示 */}
       {!hasProfile && (
-        <div className="mb-3 p-3 bg-slate-50 rounded-lg text-center">
-          <p className="text-sm text-slate-500 flex items-center justify-center gap-1">
+        <div className="mb-3 p-3 bg-[#F4F6F0] rounded-lg text-center">
+          <p className="text-sm text-[#7D8A80] flex items-center justify-center gap-1">
             <FileText size={14} />
             点击编辑完善猫咪档案
           </p>
@@ -88,7 +88,7 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
       )}
       
       {/* 出镜统计 */}
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs text-[#7D8A80]">
         <span className="flex items-center gap-1">
           <Camera size={12} />
           已出镜 {appearances} 次
@@ -97,7 +97,7 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
         {hasProfile && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 hover:text-slate-700 transition-colors"
+            className="flex items-center gap-1 hover:text-[#4A6741] transition-colors"
           >
             {expanded ? '收起' : '详情'}
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -107,36 +107,36 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
       
       {/* 展开详情 */}
       {expanded && hasProfile && (
-        <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+        <div className="mt-4 pt-4 border-t border-[#E2E8D5] space-y-3">
           {cat.appearance && (
             <div>
-              <p className="text-xs font-medium text-slate-700 mb-1 flex items-center gap-1">
-                <Palette size={12} />
+              <p className="text-xs font-medium text-[#2D3A30] mb-1 flex items-center gap-1">
+                <Palette size={12} className="text-[#4A6741]" />
                 外貌特征
               </p>
-              <p className="text-sm text-slate-600">{cat.appearance}</p>
+              <p className="text-sm text-[#7D8A80]">{cat.appearance}</p>
             </div>
           )}
           
           {cat.bestContentType && (
             <div>
-              <p className="text-xs font-medium text-slate-700 mb-1 flex items-center gap-1">
-                <Sparkles size={12} />
+              <p className="text-xs font-medium text-[#2D3A30] mb-1 flex items-center gap-1">
+                <Sparkles size={12} className="text-[#4A6741]" />
                 适合内容类型
               </p>
-              <p className="text-sm text-slate-600">{cat.bestContentType}</p>
+              <p className="text-sm text-[#7D8A80]">{cat.bestContentType}</p>
             </div>
           )}
           
           {cat.contentTags && cat.contentTags.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-slate-700 mb-1 flex items-center gap-1">
-                <Tag size={12} />
+              <p className="text-xs font-medium text-[#2D3A30] mb-1 flex items-center gap-1">
+                <Tag size={12} className="text-[#4A6741]" />
                 推荐标签
               </p>
               <div className="flex flex-wrap gap-1">
                 {cat.contentTags.map(tag => (
-                  <span key={tag} className="text-xs text-slate-400">#{tag}</span>
+                  <span key={tag} className="text-xs text-[#7D8A80]">#{tag}</span>
                 ))}
               </div>
             </div>
@@ -144,11 +144,11 @@ export default function CatCard({ cat, appearances = 0, onEdit }: CatCardProps) 
           
           {cat.notes && (
             <div>
-              <p className="text-xs font-medium text-slate-700 mb-1 flex items-center gap-1">
-                <FileText size={12} />
+              <p className="text-xs font-medium text-[#2D3A30] mb-1 flex items-center gap-1">
+                <FileText size={12} className="text-[#4A6741]" />
                 备注
               </p>
-              <p className="text-sm text-slate-600">{cat.notes}</p>
+              <p className="text-sm text-[#7D8A80]">{cat.notes}</p>
             </div>
           )}
         </div>
