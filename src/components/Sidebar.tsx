@@ -74,17 +74,28 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         {/* Logo & Profile */}
         <div className="mb-8 px-3 pt-2">
           <div className="flex items-center gap-3">
-            {userProfile.avatar ? (
-              <img 
-                src={userProfile.avatar} 
-                alt="头像"
-                className="w-10 h-10 rounded-xl object-cover shadow-lg border-2 border-white"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-lg">
-                <Palmtree size={20} className="text-white" />
+            <Link 
+              href="/settings" 
+              onClick={onClose}
+              className="relative group"
+              title="点击修改头像"
+            >
+              {userProfile.avatar ? (
+                <img 
+                  src={userProfile.avatar} 
+                  alt="头像"
+                  className="w-10 h-10 rounded-xl object-cover shadow-lg border-2 border-white group-hover:scale-105 transition-transform"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                  <User size={20} className="text-white" />
+                </div>
+              )}
+              {/* 悬停提示 */}
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white text-[8px]">+</span>
               </div>
-            )}
+            </Link>
             <div>
               <h1 className="text-lg font-bold text-gradient">
                 {userProfile.nickname || '小离岛岛'}
