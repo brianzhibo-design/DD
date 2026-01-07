@@ -17,7 +17,8 @@ import {
   Trash2,
   Camera,
   Check,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { getWeeklyStats, saveWeeklyStat, deleteWeeklyStat, WeeklyStat } from '@/lib/db';
 
@@ -28,6 +29,7 @@ export default function AnalyticsPage() {
   const [showModal, setShowModal] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const [formData, setFormData] = useState({
     week_start: '',
     week_end: '',
@@ -167,6 +169,39 @@ export default function AnalyticsPage() {
     setPreviewImage(null);
   };
 
+  // 同步小红书数据
+  const handleSync = async () => {
+    if (syncing) return;
+    
+    if (!confirm('确定要从小红书同步最新数据吗？')) return;
+    
+    setSyncing(true);
+    
+    try {
+      const response = await fetch('/api/sync-xhs', { method: 'POST' });
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`同步成功！
+
+账号：${result.data.nickname}
+粉丝：${result.data.followers}
+笔记：${result.data.notesCount} 篇
+获赞：${result.data.totalLikes}
+收藏：${result.data.totalCollects}`);
+        
+        loadData(); // 重新加载页面数据
+      } else {
+        alert('同步失败: ' + result.error);
+      }
+    } catch (error) {
+      console.error('同步错误:', error);
+      alert('同步失败，请检查网络');
+    }
+    
+    setSyncing(false);
+  };
+
   const latestStat = stats[0];
   const totalInteractions = latestStat ? latestStat.likes + latestStat.saves + latestStat.comments : 0;
   const interactionRate = latestStat?.views ? ((totalInteractions / latestStat.views) * 100).toFixed(2) : '0';
@@ -183,13 +218,24 @@ export default function AnalyticsPage() {
           </h1>
           <p className="text-slate-500 mt-1">深度追踪运营趋势，驱动内容增长</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center justify-center gap-2 bg-pink-500 hover:bg-pink-600 active:scale-95 transition-all text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg shadow-pink-200"
-        >
-          <Plus size={18} />
-          录入数据
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 px-5 rounded-xl disabled:opacity-50 transition-all shadow-lg shadow-green-200"
+          >
+            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? '同步中...' : '同步小红书'}
+          </button>
+          
+          <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center gap-2 bg-pink-500 hover:bg-pink-600 active:scale-95 transition-all text-white font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-pink-200"
+          >
+            <Plus size={18} />
+            手动录入
+          </button>
+        </div>
       </div>
 
       <div className="max-w-6xl mx-auto space-y-6">
