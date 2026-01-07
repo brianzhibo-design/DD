@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppLayout from "@/components/AppLayout";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "小离岛岛 · 小红书运营系统",
@@ -46,7 +47,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#EC4899" />
       </head>
       <body className="antialiased overscroll-none touch-pan-y">
-        <AppLayout>{children}</AppLayout>
+        <AuthProvider>
+          <AppLayout>{children}</AppLayout>
+        </AuthProvider>
       </body>
     </html>
   );

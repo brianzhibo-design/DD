@@ -9,9 +9,20 @@ import MobileHeader from './MobileHeader';
 // 这些页面有自己的 header，不需要通用的 MobileHeader
 const CUSTOM_HEADER_PAGES = ['/assistant'];
 
+// 不显示布局的页面（登录页等）
+const NO_LAYOUT_PAGES = ['/login'];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  
+  // 检查是否是不需要布局的页面
+  const noLayout = NO_LAYOUT_PAGES.some(page => pathname?.startsWith(page));
+  
+  // 登录页面等不显示布局
+  if (noLayout) {
+    return <>{children}</>;
+  }
   
   // 检查是否是自定义 header 页面
   const hasCustomHeader = CUSTOM_HEADER_PAGES.some(page => pathname?.startsWith(page));

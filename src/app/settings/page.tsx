@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap, Camera, User } from 'lucide-react';
+import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap, Camera, User, Lock, Eye, EyeOff, Shield, LogOut, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { testSupabaseConnection } from '@/lib/db';
 import { getUserProfile, saveUserProfile, compressImage, UserProfile, loadUserProfile } from '@/lib/user-profile';
 
@@ -19,6 +20,16 @@ export default function SettingsPage() {
   const [testingOneapi, setTestingOneapi] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [nickname, setNickname] = useState('');
+  
+  // 密码修改状态
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  
+  const router = useRouter();
   
   const testSupabase = async () => {
     setTestingSupabase(true);
@@ -125,6 +136,60 @@ export default function SettingsPage() {
       alert('昵称已保存');
     } else {
       alert('保存失败，请重试');
+    }
+  };
+
+  // 修改密码
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMessage(null);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordMessage({ type: 'error', text: '请填写所有字段' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordMessage({ type: 'error', text: '新密码至少6位' });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: 'error', text: '两次输入的新密码不一致' });
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setPasswordMessage({ type: 'success', text: '密码修改成功' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setPasswordMessage({ type: 'error', text: result.error || '修改失败' });
+      }
+    } catch {
+      setPasswordMessage({ type: 'error', text: '网络错误，请重试' });
+    }
+
+    setPasswordLoading(false);
+  };
+
+  // 退出登录
+  const handleLogout = async () => {
+    if (confirm('确定要退出登录吗？')) {
+      await fetch('/api/auth', { method: 'DELETE' });
+      router.push('/login');
     }
   };
   
@@ -358,6 +423,111 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...`}
         </ul>
       </div>
       
+      {/* 修改密码 */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center">
+            <Shield size={20} className="text-pink-500" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-800">修改密码</h2>
+            <p className="text-sm text-gray-500">定期更换密码保护账户安全</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">当前密码</label>
+            <div className="relative">
+              <input
+                type={showPasswords ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pr-12 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 transition-all"
+                placeholder="输入当前密码"
+              />
+              <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">新密码</label>
+            <input
+              type={showPasswords ? 'text' : 'password'}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 transition-all"
+              placeholder="输入新密码（至少6位）"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">确认新密码</label>
+            <div className="relative">
+              <input
+                type={showPasswords ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pr-12 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 transition-all"
+                placeholder="再次输入新密码"
+              />
+              {newPassword && confirmPassword && newPassword === confirmPassword && (
+                <Check className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+              )}
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showPasswords}
+              onChange={(e) => setShowPasswords(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-500"
+            />
+            <span className="text-sm text-gray-600">显示密码</span>
+          </label>
+
+          {passwordMessage && (
+            <div className={`p-3 rounded-xl text-sm ${
+              passwordMessage.type === 'success' 
+                ? 'bg-green-50 text-green-600' 
+                : 'bg-red-50 text-red-600'
+            }`}>
+              {passwordMessage.text}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={passwordLoading}
+            className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold py-3 rounded-xl shadow-lg shadow-pink-200/50 hover:shadow-xl transition-all disabled:opacity-50"
+          >
+            {passwordLoading ? '保存中...' : '保存新密码'}
+          </button>
+        </form>
+      </div>
+
+      {/* 退出登录 */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+              <LogOut size={20} className="text-gray-500" />
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-800">退出登录</h2>
+              <p className="text-sm text-gray-500">退出当前账户</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium"
+          >
+            退出
+          </button>
+        </div>
+      </div>
+
       {/* About */}
       <div className="mt-8 text-center text-sm text-gray-400">
         <p>小离岛岛 · 小红书运营系统</p>
