@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   Users, Heart, Bookmark, MessageCircle, TrendingUp, 
   FileText, Calendar, RefreshCw, ArrowUpRight,
-  ArrowDownRight, BarChart3, Plus, X, Save, Upload
+  ArrowDownRight, BarChart3, Plus, X, Save, Upload,
+  Camera, Sparkles, Image as ImageIcon, Loader2
 } from 'lucide-react'
 
 interface WeeklyStats {
@@ -58,6 +59,11 @@ export default function AnalyticsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [formData, setFormData] = useState<WeeklyStats>(emptyWeeklyData)
   const [saving, setSaving] = useState(false)
+  
+  // 截图分析相关状态
+  const [analyzing, setAnalyzing] = useState(false)
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadData = async () => {
     try {
@@ -139,6 +145,63 @@ export default function AnalyticsPage() {
       week_start: monday.toISOString().split('T')[0],
       week_end: sunday.toISOString().split('T')[0]
     })
+  }
+
+  // 处理图片上传
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 转换为 base64
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string
+      setUploadedImage(base64)
+      await analyzeScreenshot(base64)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // 分析截图
+  const analyzeScreenshot = async (imageData: string) => {
+    setAnalyzing(true)
+    try {
+      const res = await fetch('/api/analyze-screenshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData })
+      })
+      const result = await res.json()
+      
+      if (result.success && result.data) {
+        // 将识别到的数据填充到表单
+        setFormData(prev => ({
+          ...prev,
+          followers: result.data.followers || prev.followers,
+          new_followers: result.data.new_followers || prev.new_followers,
+          likes: result.data.likes || prev.likes,
+          saves: result.data.saves || prev.saves,
+          comments: result.data.comments || prev.comments,
+          views: result.data.views || prev.views,
+          posts_count: result.data.posts_count || prev.posts_count,
+          female_ratio: result.data.female_ratio || prev.female_ratio
+        }))
+        alert('✅ 截图识别成功！数据已自动填充')
+      } else {
+        alert('识别失败: ' + (result.error || '请尝试上传更清晰的截图'))
+      }
+    } catch (e: any) {
+      alert('分析失败: ' + e.message)
+    }
+    setAnalyzing(false)
+  }
+
+  // 清除上传的图片
+  const clearImage = () => {
+    setUploadedImage(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   useEffect(() => { loadData() }, [])
@@ -412,6 +475,74 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="space-y-4">
+              {/* 截图上传区域 */}
+              <div className="relative">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="screenshot-upload"
+                />
+                
+                {!uploadedImage ? (
+                  <label
+                    htmlFor="screenshot-upload"
+                    className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-[#2D4B3E]/20 rounded-2xl cursor-pointer hover:border-[#2D4B3E]/40 hover:bg-[#F4F6F0]/50 transition-all"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#2D4B3E] to-[#4A7C6F] flex items-center justify-center">
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-[#1A2421]">上传小红书后台截图</p>
+                      <p className="text-xs text-[#9BA8A3] mt-1">AI 自动识别数据并填充</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-[#2D4B3E] font-medium">
+                      <Sparkles className="w-3 h-3" />
+                      点击上传或拖拽图片
+                    </div>
+                  </label>
+                ) : (
+                  <div className="relative rounded-2xl overflow-hidden bg-[#F4F6F0]">
+                    <img 
+                      src={uploadedImage} 
+                      alt="上传的截图" 
+                      className="w-full h-40 object-contain"
+                    />
+                    {analyzing && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <div className="flex items-center gap-2 text-white">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="text-sm font-medium">AI 识别中...</span>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      onClick={clearImage}
+                      className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full hover:bg-white"
+                    >
+                      <X className="w-4 h-4 text-[#6B7A74]" />
+                    </button>
+                    {!analyzing && (
+                      <label
+                        htmlFor="screenshot-upload"
+                        className="absolute bottom-2 right-2 flex items-center gap-1 px-3 py-1.5 bg-white/90 rounded-full text-xs font-medium text-[#2D4B3E] cursor-pointer hover:bg-white"
+                      >
+                        <ImageIcon className="w-3 h-3" />
+                        重新上传
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex items-center gap-3">
+                <div className="flex-1 h-px bg-[#E2E8D5]"></div>
+                <span className="text-xs text-[#9BA8A3]">或手动填写</span>
+                <div className="flex-1 h-px bg-[#E2E8D5]"></div>
+              </div>
+
               {/* 日期选择 */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
