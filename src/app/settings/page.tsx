@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { testSupabaseConnection } from '@/lib/db';
 import { getUserProfile, UserProfile, loadUserProfile, saveUserProfile, compressImage } from '@/lib/user-profile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ConnectionStatus {
   name: string;
@@ -30,6 +31,8 @@ interface ConnectionStatus {
 }
 
 export default function SettingsPage() {
+  const { logout } = useAuth();
+  
   const [connections, setConnections] = useState<ConnectionStatus[]>([
     { name: 'Supabase 数据库', icon: Database, status: 'checking' },
     { name: 'Claude AI', icon: Bot, status: 'checking' },
@@ -171,9 +174,9 @@ export default function SettingsPage() {
     setChangingPwd(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm('确定要退出登录吗？')) {
-      localStorage.removeItem('daodao_auth_token');
+      await logout();
       window.location.href = '/login';
     }
   };

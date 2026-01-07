@@ -63,7 +63,14 @@ export async function GET() {
 // 登出
 export async function DELETE() {
   const response = NextResponse.json({ success: true })
-  response.cookies.delete(AUTH_COOKIE_NAME)
+  // 通过设置过期时间为过去来删除 cookie
+  response.cookies.set(AUTH_COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/'
+  })
   return response
 }
 
