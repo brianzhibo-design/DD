@@ -120,7 +120,11 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' })
 
-      if (!error) savedNotes++
+      if (error) {
+        console.error(`[笔记保存失败] ${noteId}: ${error.message}`)
+      } else {
+        savedNotes++
+      }
     }
 
     console.log(`[笔记保存] 成功 ${savedNotes} 篇 | 耗时:${Date.now() - startTime}ms`)
@@ -140,7 +144,7 @@ export async function POST(request: NextRequest) {
     const lastFollowers = lastWeekList?.[0]?.followers || accountInfo.fans
     const newFollowers = Math.max(0, accountInfo.fans - lastFollowers)
 
-    await supabase.from('weekly_stats').upsert({
+    const weeklyData = {
       week_start: weekStart,
       week_end: weekEnd,
       followers: accountInfo.fans,
@@ -152,7 +156,15 @@ export async function POST(request: NextRequest) {
       views: 0,
       posts_count: accountInfo.notes_count,
       female_ratio: 85
-    }, { onConflict: 'week_start' })
+    }
+    console.log('[周统计数据]', JSON.stringify(weeklyData))
+    
+    const { error: weeklyError } = await supabase.from('weekly_stats').upsert(weeklyData, { onConflict: 'week_start' })
+    if (weeklyError) {
+      console.error('[周统计保存失败]', weeklyError.message, weeklyError.details)
+    } else {
+      console.log('[周统计保存成功]')
+    }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
     console.log(`[同步完成] 耗时:${duration}s`)

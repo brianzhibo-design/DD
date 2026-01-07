@@ -5,7 +5,7 @@ const AUTH_COOKIE_NAME = 'daodao_auth'
 const AUTH_TOKEN = 'authenticated_daodao_2024'
 
 // 不需要认证的路径
-const publicPaths = ['/login', '/api/auth', '/api/test-oneapi']
+const publicPaths = ['/login', '/api/auth', '/api/test-oneapi', '/api/debug-db']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
