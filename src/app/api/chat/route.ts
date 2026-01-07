@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 
-// Netlify/Vercel 函数超时配置 (秒)
-export const maxDuration = 60
+// Netlify Pro 函数超时配置 (最大26秒)
+export const maxDuration = 25
 
 // 获取历史数据摘要的函数（服务端调用Supabase）
 async function getContextData() {
