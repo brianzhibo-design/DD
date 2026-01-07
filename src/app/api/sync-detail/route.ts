@@ -1,0 +1,207 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+export const maxDuration = 25
+
+const ONEAPI_BASE = 'https://api.getoneapi.com'
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return null
+  return createClient(url, key)
+}
+
+async function oneApiRequest(endpoint: string, body: object) {
+  const apiKey = process.env.ONEAPI_KEY
+  if (!apiKey) throw new Error('ONEAPI_KEY 未配置')
+
+  const response = await fetch(`${ONEAPI_BASE}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(body)
+  })
+
+  const result = await response.json()
+  
+  if (result.code !== 200) {
+    throw new Error(result.message || `OneAPI错误: ${result.code}`)
+  }
+
+  return result.data
+}
+
+// 同步笔记详情和评论（分批处理，每次处理5篇）
+export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  const supabase = getSupabase()
+  
+  if (!supabase) {
+    return NextResponse.json({ success: false, error: 'Supabase 未配置' }, { status: 500 })
+  }
+
+  try {
+    // 获取需要更新详情的笔记（按更新时间排序，取最旧的5篇）
+    const { data: notes, error: fetchError } = await supabase
+      .from('notes')
+      .select('id, title')
+      .order('updated_at', { ascending: true })
+      .limit(5)
+
+    if (fetchError || !notes?.length) {
+      return NextResponse.json({ 
+        success: true, 
+        message: '没有需要更新的笔记',
+        data: { processed: 0 }
+      })
+    }
+
+    console.log(`[详情同步] 处理 ${notes.length} 篇笔记`)
+
+    let processedNotes = 0
+    let savedComments = 0
+
+    for (const note of notes) {
+      const noteId = note.id
+      
+      try {
+        // 获取笔记详情
+        const detailResult = await oneApiRequest('/api/xiaohongshu/fetch_video_detail_v6', { noteId })
+        const noteDetail = detailResult.note_list?.[0] || detailResult
+
+        if (noteDetail) {
+          const likes = parseInt(noteDetail.liked_count) || 0
+          const collects = parseInt(noteDetail.collected_count) || 0
+          const comments = parseInt(noteDetail.comments_count) || 0
+          const shares = parseInt(noteDetail.share_count) || 0
+          const title = noteDetail.title || note.title
+          const desc = noteDetail.desc || ''
+          const ipLocation = noteDetail.ip_location || ''
+          
+          let coverImage = ''
+          if (noteDetail.images_list?.[0]) {
+            coverImage = noteDetail.images_list[0].url || noteDetail.images_list[0].original || ''
+          }
+
+          // 更新笔记详情
+          await supabase.from('notes').update({
+            title: title.substring(0, 200),
+            content: desc,
+            likes,
+            collects,
+            comments,
+            shares,
+            cover_image: coverImage || undefined,
+            ip_location: ipLocation,
+            updated_at: new Date().toISOString()
+          }).eq('id', noteId)
+
+          processedNotes++
+
+          // 如果有评论，获取评论
+          if (comments > 0) {
+            try {
+              const commentsResult = await oneApiRequest('/api/xiaohongshu/fetch_video_comment', { 
+                noteId, 
+                sort: '1'
+              })
+              
+              const commentsList = commentsResult.comments || []
+              
+              for (const comment of commentsList.slice(0, 10)) {
+                const { error: commentError } = await supabase.from('note_comments').upsert({
+                  id: comment.id,
+                  note_id: noteId,
+                  user_id: comment.user?.userid || comment.user?.user_id,
+                  user_nickname: comment.user?.nickname,
+                  user_avatar: comment.user?.images || comment.user?.image,
+                  content: comment.content,
+                  like_count: parseInt(comment.like_count) || 0,
+                  sub_comment_count: parseInt(comment.sub_comment_count) || 0,
+                  ip_location: comment.ip_location || '',
+                  created_at: comment.time ? new Date(comment.time * 1000).toISOString() : null,
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'id' })
+
+                if (!commentError) savedComments++
+              }
+            } catch (e) {
+              console.log(`[评论] 获取笔记 ${noteId} 评论失败`)
+            }
+          }
+        }
+
+        // 避免请求过快
+        await new Promise(r => setTimeout(r, 200))
+
+      } catch (e: any) {
+        console.log(`[笔记详情] 获取 ${noteId} 失败: ${e.message}`)
+      }
+
+      // 检查是否快超时
+      if (Date.now() - startTime > 20000) {
+        console.log('[详情同步] 接近超时，停止处理')
+        break
+      }
+    }
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+    console.log(`[详情同步完成] 处理 ${processedNotes} 篇，评论 ${savedComments} 条，耗时 ${duration}s`)
+
+    return NextResponse.json({
+      success: true,
+      message: `详情同步完成`,
+      data: {
+        processedNotes,
+        savedComments,
+        duration: `${duration}s`
+      }
+    })
+
+  } catch (error: any) {
+    console.error('[详情同步失败]', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500 })
+  }
+}
+
+// 获取同步状态
+export async function GET() {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ status: 'error', message: 'Supabase 未配置' })
+  }
+
+  try {
+    // 获取笔记统计
+    const { count: totalNotes } = await supabase
+      .from('notes')
+      .select('*', { count: 'exact', head: true })
+
+    const { count: notesWithComments } = await supabase
+      .from('notes')
+      .select('*', { count: 'exact', head: true })
+      .gt('comments', 0)
+
+    const { count: totalComments } = await supabase
+      .from('note_comments')
+      .select('*', { count: 'exact', head: true })
+
+    return NextResponse.json({
+      status: 'ok',
+      stats: {
+        totalNotes: totalNotes || 0,
+        notesWithComments: notesWithComments || 0,
+        totalComments: totalComments || 0
+      }
+    })
+  } catch (e: any) {
+    return NextResponse.json({ status: 'error', message: e.message })
+  }
+}
+

@@ -89,12 +89,31 @@ export default function HomePage() {
       
       if (data.success) {
         await loadData()
-        alert(`同步成功！\n笔记: ${data.data.stats.savedNotes} 篇\n评论: ${data.data.stats.savedComments} 条`)
+        alert(`同步成功！(${data.data.duration})\n\n粉丝: ${formatNumber(data.data.account.fans)}\n笔记: ${data.data.stats.savedNotes} 篇`)
       } else {
         alert('同步失败: ' + data.error)
       }
     } catch (e: any) {
       alert('同步失败: ' + e.message)
+    }
+    setSyncing(false)
+  }
+
+  // 同步笔记详情和评论（可选，分批执行）
+  const syncDetails = async () => {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/sync-detail', { method: 'POST' })
+      const data = await res.json()
+      
+      if (data.success) {
+        await loadData()
+        alert(`详情同步完成！(${data.data.duration})\n\n处理笔记: ${data.data.processedNotes} 篇\n新增评论: ${data.data.savedComments} 条`)
+      } else {
+        alert('详情同步失败: ' + data.error)
+      }
+    } catch (e: any) {
+      alert('详情同步失败: ' + e.message)
     }
     setSyncing(false)
   }
@@ -179,7 +198,7 @@ export default function HomePage() {
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {account?.updated_at && (
             <span className="text-xs text-[#9BA8A3] flex items-center gap-1 hidden md:flex">
               <Clock className="w-3 h-3" />
@@ -189,10 +208,18 @@ export default function HomePage() {
           <button
             onClick={syncData}
             disabled={syncing}
-            className="flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-[#2D4B3E] text-white rounded-full hover:bg-[#3D6654] disabled:opacity-50 transition-all text-sm font-bold shadow-lg shadow-[#2D4B3E]/20"
+            className="flex items-center gap-2 px-4 py-2 bg-[#2D4B3E] text-white rounded-full hover:bg-[#3D6654] disabled:opacity-50 transition-all text-sm font-bold shadow-lg shadow-[#2D4B3E]/20"
           >
             <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? '同步中...' : '同步小红书'}
+            {syncing ? '同步中...' : '同步'}
+          </button>
+          <button
+            onClick={syncDetails}
+            disabled={syncing}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-[#2D4B3E]/20 text-[#2D4B3E] rounded-full hover:bg-[#F4F6F0] disabled:opacity-50 transition-all text-xs font-medium"
+            title="同步笔记详情和评论（每次处理5篇）"
+          >
+            详情
           </button>
         </div>
       </div>
