@@ -45,20 +45,20 @@ export default function Home() {
       <div className="bg-slate-900 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-xl shadow-slate-200">
         <div className="relative">
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles size={18} className="text-slate-400" />
-            <span className="text-slate-400 text-sm font-medium">小红书运营系统</span>
+            <Sparkles size={18} className="text-white/60" />
+            <span className="text-white/60 text-sm font-medium">小红书运营系统</span>
           </div>
           
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-white">
             下午好，{userProfile.nickname || '岛主'}
           </h1>
-          <p className="text-slate-400 text-sm md:text-base">
+          <p className="text-white/70 text-sm md:text-base">
             今天的数据表现平稳，保持专注
           </p>
         </div>
         
         {/* 日期 */}
-        <div className="absolute top-6 right-6 text-xs text-slate-500 font-mono hidden md:block">
+        <div className="absolute top-6 right-6 text-xs text-white/40 font-mono hidden md:block">
           {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
         </div>
       </div>
@@ -108,22 +108,22 @@ export default function Home() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  stat.dark ? 'bg-white/10' : 'bg-slate-50'
+                  stat.dark ? 'bg-white/20' : 'bg-slate-50'
                 }`}>
                   <stat.icon className={`w-5 h-5 ${stat.dark ? 'text-white' : 'text-slate-600'}`} />
                 </div>
                 {stat.trend && (
                   <span className={`text-xs font-medium flex items-center gap-1 px-2 py-1 rounded-md ${
-                    stat.trendDown 
-                      ? 'text-red-500 bg-red-50' 
-                      : 'text-emerald-500 bg-emerald-50'
+                    stat.dark
+                      ? stat.trendDown ? 'text-red-300 bg-red-500/20' : 'text-emerald-300 bg-emerald-500/20'
+                      : stat.trendDown ? 'text-red-500 bg-red-50' : 'text-emerald-500 bg-emerald-50'
                   }`}>
                     <TrendingUp className={`w-3 h-3 ${stat.trendDown ? 'rotate-180' : ''}`} />
                     {stat.trend}
                   </span>
                 )}
               </div>
-              <p className={`text-xs font-medium mb-1 ${stat.dark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-xs font-medium mb-1 ${stat.dark ? 'text-white/60' : 'text-slate-500'}`}>
                 {stat.label}
               </p>
               <p className={`text-2xl font-bold ${stat.dark ? 'text-white' : 'text-slate-800'}`}>
