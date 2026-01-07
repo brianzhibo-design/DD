@@ -4,16 +4,27 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Cat, BarChart3, Lightbulb, TrendingUp, Users, 
-  Sparkles, ArrowUpRight, Eye, CheckCircle2, Plus,
-  PieChart, Bot, Loader2, MessageCircle
+  Sparkles, ArrowUpRight, ArrowDownRight, Eye, CheckCircle2, Plus,
+  PieChart, Bot, Loader2, MessageCircle, Minus
 } from 'lucide-react';
-import { getLatestWeeklyStat } from '@/lib/db';
+import { getWeeklyStats } from '@/lib/db';
 import { WeeklyStat } from '@/lib/supabase';
 import { initialCats } from '@/data/cats';
 import { getUserProfile, UserProfile, loadUserProfile } from '@/lib/user-profile';
 
+// 计算增长率
+function calcGrowth(current?: number, previous?: number): { value: string; isUp: boolean | null } {
+  if (!current || !previous || previous === 0) {
+    return { value: '', isUp: null };
+  }
+  const growth = ((current - previous) / previous) * 100;
+  const formatted = growth > 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+  return { value: formatted, isUp: growth > 0 };
+}
+
 export default function Home() {
-  const [weeklyData, setWeeklyData] = useState<WeeklyStat | null>(null);
+  const [currentWeek, setCurrentWeek] = useState<WeeklyStat | null>(null);
+  const [previousWeek, setPreviousWeek] = useState<WeeklyStat | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile>({});
   const [greeting, setGreeting] = useState('你好');
@@ -24,7 +35,6 @@ export default function Home() {
     setUserProfile(getUserProfile());
     loadUserProfile().then(setUserProfile);
     
-    // 设置问候语和日期（只在客户端）
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('早上好');
     else if (hour < 18) setGreeting('下午好');
@@ -37,12 +47,37 @@ export default function Home() {
 
   const loadData = async () => {
     try {
-      const data = await getLatestWeeklyStat();
-      setWeeklyData(data);
+      // 获取最近两周的数据用于计算环比
+      const stats = await getWeeklyStats();
+      if (stats.length > 0) {
+        setCurrentWeek(stats[0]);
+        if (stats.length > 1) {
+          setPreviousWeek(stats[1]);
+        }
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
     }
     setLoading(false);
+  };
+
+  // 计算各项数据的环比
+  const viewsGrowth = calcGrowth(currentWeek?.views, previousWeek?.views);
+  const followersGrowth = calcGrowth(currentWeek?.new_followers, previousWeek?.new_followers);
+  
+  const currentInteraction = currentWeek ? (currentWeek.likes || 0) + (currentWeek.saves || 0) + (currentWeek.comments || 0) : 0;
+  const previousInteraction = previousWeek ? (previousWeek.likes || 0) + (previousWeek.saves || 0) + (previousWeek.comments || 0) : 0;
+  const interactionGrowth = calcGrowth(currentInteraction, previousInteraction);
+  
+  const femaleRatioGrowth = calcGrowth(currentWeek?.female_ratio, previousWeek?.female_ratio);
+
+  // 判断数据表现
+  const getStatusMessage = () => {
+    if (!currentWeek) return '暂无数据，请先录入运营数据';
+    
+    const hasGrowth = viewsGrowth.isUp || followersGrowth.isUp || interactionGrowth.isUp;
+    if (hasGrowth) return '本周数据表现良好，继续保持！';
+    return '数据略有波动，建议调整内容策略';
   };
 
   const quickLinks = [
@@ -66,6 +101,35 @@ export default function Home() {
     { text: '录入本周运营数据', checked: false },
   ];
 
+  // 构建统计卡片数据
+  const statsData = [
+    { 
+      label: '总浏览量', 
+      value: currentWeek?.views?.toLocaleString() || '--', 
+      growth: viewsGrowth,
+      icon: Eye, 
+      isPrimary: true 
+    },
+    { 
+      label: '新增粉丝', 
+      value: currentWeek?.new_followers?.toLocaleString() || '--', 
+      growth: followersGrowth,
+      icon: Users 
+    },
+    { 
+      label: '互动总数', 
+      value: currentInteraction > 0 ? currentInteraction.toLocaleString() : '--', 
+      growth: interactionGrowth,
+      icon: MessageCircle 
+    },
+    { 
+      label: '女粉占比', 
+      value: currentWeek?.female_ratio ? `${currentWeek.female_ratio}%` : '--', 
+      growth: femaleRatioGrowth,
+      icon: TrendingUp
+    },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-8">
       {/* Hero Header */}
@@ -81,7 +145,7 @@ export default function Home() {
             {greeting}，{userProfile.nickname || '岛主'}
           </h1>
           <p className="text-white/70 text-sm">
-            今天的数据表现平稳，保持专注
+            {getStatusMessage()}
           </p>
         </div>
         
@@ -99,34 +163,7 @@ export default function Home() {
             <Loader2 size={24} className="animate-spin text-[#6B7A74]" />
           </div>
         ) : (
-          [
-            { 
-              label: '总浏览量', 
-              value: weeklyData?.views?.toLocaleString() || '--', 
-              trend: '+12.5%',
-              icon: Eye, 
-              isPrimary: true 
-            },
-            { 
-              label: '新增粉丝', 
-              value: weeklyData?.new_followers?.toLocaleString() || '--', 
-              trend: '+8.2%',
-              icon: Users 
-            },
-            { 
-              label: '互动总数', 
-              value: weeklyData?.likes ? (weeklyData.likes + (weeklyData.saves || 0) + (weeklyData.comments || 0)).toLocaleString() : '--', 
-              trend: '+24.3%',
-              icon: MessageCircle 
-            },
-            { 
-              label: '女粉占比', 
-              value: weeklyData?.female_ratio ? `${weeklyData.female_ratio}%` : '--', 
-              trend: weeklyData?.female_ratio && weeklyData.female_ratio < 60 ? '-2.1%' : '+1.5%',
-              icon: TrendingUp,
-              trendDown: weeklyData?.female_ratio && weeklyData.female_ratio < 60
-            },
-          ].map((stat, i) => (
+          statsData.map((stat, i) => (
             <div 
               key={i} 
               className={`rounded-[2rem] p-6 group hover:translate-y-[-4px] transition-all cursor-default ${
@@ -141,14 +178,20 @@ export default function Home() {
                 }`}>
                   <stat.icon className={`w-5 h-5 ${stat.isPrimary ? 'text-white' : 'text-[#2D4B3E]'}`} />
                 </div>
-                {stat.trend && (
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${
+                {stat.growth.value && (
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-0.5 ${
                     stat.isPrimary 
                       ? 'bg-white/20 text-white' 
-                      : `${stat.trendDown ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-600'}`
+                      : stat.growth.isUp 
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : stat.growth.isUp === false 
+                          ? 'bg-red-50 text-red-500'
+                          : 'bg-gray-50 text-gray-500'
                   }`}>
-                    <ArrowUpRight className={`w-3 h-3 inline-block mr-0.5 ${stat.trendDown ? 'rotate-180' : ''}`} />
-                    {stat.trend}
+                    {stat.growth.isUp === true && <ArrowUpRight className="w-3 h-3" />}
+                    {stat.growth.isUp === false && <ArrowDownRight className="w-3 h-3" />}
+                    {stat.growth.isUp === null && <Minus className="w-3 h-3" />}
+                    {stat.growth.value}
                   </span>
                 )}
               </div>
@@ -268,7 +311,7 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-          {initialCats.map((cat, i) => (
+          {initialCats.map((cat) => (
             <div 
               key={cat.id} 
               className="bg-[#FDFBF7] rounded-xl p-4 text-center group hover:shadow-md transition-all cursor-pointer hover:-translate-y-1 border border-[#2D4B3E]/5"
