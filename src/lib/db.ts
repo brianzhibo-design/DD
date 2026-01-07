@@ -217,18 +217,51 @@ export async function getCats(): Promise<CatRecord[]> {
   return data || []
 }
 
-export async function updateCat(id: string, updates: Partial<CatRecord>): Promise<CatRecord | null> {
+export async function updateCat(idOrName: string, updates: Partial<CatRecord>): Promise<CatRecord | null> {
+  console.log('[DB] updateCat - updating:', idOrName, updates)
+  
+  // 先尝试通过名字查找（更可靠）
+  const catName = updates.name || idOrName
+  
+  // 使用 upsert：如果存在则更新，不存在则插入
   const { data, error } = await supabase
     .from('cats')
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id)
+    .upsert(
+      { 
+        name: catName,
+        ...updates, 
+        updated_at: new Date().toISOString() 
+      },
+      { 
+        onConflict: 'name',  // 通过名字匹配
+        ignoreDuplicates: false 
+      }
+    )
     .select()
     .single()
   
   if (error) {
     console.error('[DB] updateCat error:', error)
-    return null
+    // 如果 upsert 失败，尝试直接 insert
+    const { data: insertData, error: insertError } = await supabase
+      .from('cats')
+      .insert({ 
+        name: catName,
+        ...updates, 
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString() 
+      })
+      .select()
+      .single()
+    
+    if (insertError) {
+      console.error('[DB] updateCat insert fallback error:', insertError)
+      return null
+    }
+    return insertData
   }
+  
+  console.log('[DB] updateCat - success:', data)
   return data
 }
 
