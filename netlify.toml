@@ -2,6 +2,30 @@
   command = "npm run build"
   publish = ".next"
 
+# 函数配置
+[functions]
+  # 增加函数超时时间 (需要 Netlify Pro)
+  # 免费版最大10秒，Pro版最大26秒
+  node_bundler = "esbuild"
+
+# API 路由特定配置
+[functions."api/*"]
+  # 背景函数可以运行更长时间
+  # background = true
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# 重定向配置
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# 头部配置
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
