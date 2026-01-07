@@ -1,7 +1,9 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Palmtree, Sparkles } from 'lucide-react';
+import { getUserProfile, UserProfile } from '@/lib/user-profile';
 
 const pageNames: Record<string, string> = {
   '/': '首页',
@@ -16,6 +18,17 @@ const pageNames: Record<string, string> = {
 export default function MobileHeader() {
   const pathname = usePathname();
   const pageName = pageNames[pathname] || '小离岛岛';
+  const [userProfile, setUserProfile] = useState<UserProfile>({});
+
+  useEffect(() => {
+    setUserProfile(getUserProfile());
+    
+    const interval = setInterval(() => {
+      setUserProfile(getUserProfile());
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
   
   return (
     <header className="sticky top-0 z-30 lg:hidden">
@@ -26,14 +39,22 @@ export default function MobileHeader() {
       <div className="relative flex items-center justify-between px-4 py-3 min-h-[56px]">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-md">
-            <Palmtree size={16} className="text-white" />
-          </div>
+          {userProfile.avatar ? (
+            <img 
+              src={userProfile.avatar} 
+              alt="头像"
+              className="w-8 h-8 rounded-lg object-cover shadow-md border border-white"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-md">
+              <Palmtree size={16} className="text-white" />
+            </div>
+          )}
           <div>
             <p className="text-sm font-bold text-gray-800">{pageName}</p>
             <p className="text-[9px] text-gray-400 flex items-center gap-0.5">
               <Sparkles size={8} className="text-pink-400" />
-              小离岛岛
+              {userProfile.nickname || '小离岛岛'}
             </p>
           </div>
         </div>

@@ -10,13 +10,16 @@ import {
 import { getLatestWeeklyStat } from '@/lib/db';
 import { WeeklyStat } from '@/lib/supabase';
 import { initialCats } from '@/data/cats';
+import { getUserProfile, UserProfile } from '@/lib/user-profile';
 
 export default function Home() {
   const [weeklyData, setWeeklyData] = useState<WeeklyStat | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile>({});
   
   useEffect(() => {
     loadData();
+    setUserProfile(getUserProfile());
   }, []);
 
   const loadData = async () => {
@@ -69,7 +72,7 @@ export default function Home() {
           </div>
           
           <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 tracking-tight">
-            欢迎回来，岛岛！
+            欢迎回来，{userProfile.nickname || '岛岛'}！
           </h1>
           <p className="text-white/90 text-lg font-medium">
             内容创作 × 生活方式 × 精致分享

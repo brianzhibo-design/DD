@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap } from 'lucide-react';
+import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap, Camera, User } from 'lucide-react';
 import { testSupabaseConnection } from '@/lib/db';
+import { getUserProfile, saveUserProfile, compressImage, UserProfile } from '@/lib/user-profile';
 
 interface ApiStatus {
   success: boolean;
@@ -16,6 +17,8 @@ export default function SettingsPage() {
   const [testingSupabase, setTestingSupabase] = useState(false);
   const [testingClaude, setTestingClaude] = useState(false);
   const [testingOneapi, setTestingOneapi] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile>({});
+  const [nickname, setNickname] = useState('');
   
   const testSupabase = async () => {
     setTestingSupabase(true);
@@ -65,10 +68,50 @@ export default function SettingsPage() {
     testClaude();
     testOneapi();
   };
+
+  // 加载用户资料
+  useEffect(() => {
+    const profile = getUserProfile();
+    setUserProfile(profile);
+    setNickname(profile.nickname || '');
+  }, []);
   
   useEffect(() => {
     testAllConnections();
   }, []);
+
+  // 处理头像上传
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('请上传图片文件');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('图片大小不能超过5MB');
+      return;
+    }
+
+    try {
+      const base64 = await compressImage(file, 150);
+      const updated = { ...userProfile, avatar: base64 };
+      saveUserProfile(updated);
+      setUserProfile(updated);
+    } catch {
+      alert('图片处理失败');
+    }
+  };
+
+  // 保存昵称
+  const handleSaveNickname = () => {
+    const updated = { ...userProfile, nickname };
+    saveUserProfile(updated);
+    setUserProfile(updated);
+    alert('昵称已保存');
+  };
   
   return (
     <div className="max-w-2xl mx-auto">
@@ -77,7 +120,64 @@ export default function SettingsPage() {
           <Settings size={24} className="text-gray-600" />
           设置
         </h1>
-        <p className="text-gray-500">管理系统配置和数据库连接</p>
+        <p className="text-gray-500">管理个人资料和系统配置</p>
+      </div>
+
+      {/* 个人资料 */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <User size={18} className="text-pink-500" />
+          个人资料
+        </h2>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          {/* 头像 */}
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-pink-100 to-purple-100 border-4 border-white shadow-lg">
+              {userProfile.avatar ? (
+                <img 
+                  src={userProfile.avatar} 
+                  alt="头像"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <User size={40} className="text-pink-300" />
+                </div>
+              )}
+            </div>
+            <label className="absolute bottom-0 right-0 w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-pink-600 transition-colors shadow-md">
+              <Camera size={16} className="text-white" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {/* 昵称 */}
+          <div className="flex-1 w-full sm:w-auto">
+            <label className="block text-sm font-medium text-gray-700 mb-2">昵称</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="输入你的昵称"
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-300 outline-none"
+              />
+              <button
+                onClick={handleSaveNickname}
+                className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+              >
+                保存
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">头像和昵称将显示在侧边栏和首页</p>
+          </div>
+        </div>
       </div>
       
       {/* 服务连接状态 */}

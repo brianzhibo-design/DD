@@ -1,8 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Cat, BarChart3, Lightbulb, MessageCircle, Settings, Sparkles, Palmtree, Target, X } from 'lucide-react';
+import { Home, Cat, BarChart3, Lightbulb, MessageCircle, Settings, Sparkles, Palmtree, Target, X, User } from 'lucide-react';
+import { getUserProfile, UserProfile } from '@/lib/user-profile';
 
 const navItems = [
   { href: '/', label: '首页', icon: Home },
@@ -20,6 +22,27 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const [userProfile, setUserProfile] = useState<UserProfile>({});
+
+  useEffect(() => {
+    setUserProfile(getUserProfile());
+    
+    // 监听 localStorage 变化
+    const handleStorage = () => {
+      setUserProfile(getUserProfile());
+    };
+    window.addEventListener('storage', handleStorage);
+    
+    // 定时刷新（处理同页面更新）
+    const interval = setInterval(() => {
+      setUserProfile(getUserProfile());
+    }, 2000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
   
   return (
     <>
@@ -48,15 +71,23 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <X size={20} />
         </button>
         
-        {/* Logo */}
+        {/* Logo & Profile */}
         <div className="mb-8 px-3 pt-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-lg">
-              <Palmtree size={20} className="text-white" />
-            </div>
+            {userProfile.avatar ? (
+              <img 
+                src={userProfile.avatar} 
+                alt="头像"
+                className="w-10 h-10 rounded-xl object-cover shadow-lg border-2 border-white"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-lg">
+                <Palmtree size={20} className="text-white" />
+              </div>
+            )}
             <div>
               <h1 className="text-lg font-bold text-gradient">
-                小离岛岛
+                {userProfile.nickname || '小离岛岛'}
               </h1>
               <p className="text-[11px] text-gray-400 flex items-center gap-1">
                 <Sparkles size={10} className="text-pink-400" />
