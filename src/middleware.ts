@@ -13,18 +13,17 @@ export function middleware(request: NextRequest) {
   // 检查是否是公开路径
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
   
-  // API 路由不检查（除了公开的 auth）
-  if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth')) {
-    // API 路由需要认证
+  // 公开路径直接放行
+  if (isPublicPath) {
+    return NextResponse.next()
+  }
+  
+  // API 路由需要认证
+  if (pathname.startsWith('/api/')) {
     const authCookie = request.cookies.get(AUTH_COOKIE_NAME)
     if (authCookie?.value !== AUTH_TOKEN) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    return NextResponse.next()
-  }
-
-  // 公开路径直接放行
-  if (isPublicPath) {
     return NextResponse.next()
   }
 
