@@ -20,8 +20,8 @@ export default function BottomNav({ onMoreClick }: BottomNavProps) {
   
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
-      {/* 安全区域背景 */}
-      <div className="absolute inset-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]" />
+      {/* 背景 */}
+      <div className="absolute inset-0 bg-white border-t border-slate-100" />
       
       {/* 导航内容 */}
       <div className="relative flex items-center justify-around px-2 pb-safe">
@@ -31,19 +31,19 @@ export default function BottomNav({ onMoreClick }: BottomNavProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center py-2 px-4 min-h-[60px] min-w-[60px] rounded-xl transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center py-2 px-4 min-h-[60px] min-w-[60px] rounded-lg transition-all ${
                 isActive 
-                  ? 'text-pink-500' 
-                  : 'text-gray-400 active:text-pink-400 active:bg-pink-50'
+                  ? 'text-slate-900' 
+                  : 'text-slate-400 active:text-slate-600 active:bg-slate-50'
               }`}
             >
               <div className={`relative ${isActive ? 'scale-110' : ''} transition-transform`}>
-                <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
                 {isActive && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-pink-500 rounded-full animate-pulse" />
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-slate-900 rounded-full" />
                 )}
               </div>
-              <span className={`text-[10px] mt-1 font-medium ${isActive ? 'text-pink-500' : ''}`}>
+              <span className={`text-[10px] mt-1 font-medium`}>
                 {item.label}
               </span>
             </Link>
@@ -53,14 +53,13 @@ export default function BottomNav({ onMoreClick }: BottomNavProps) {
         {/* 更多按钮 */}
         <button
           onClick={onMoreClick}
-          className="flex flex-col items-center justify-center py-2 px-4 min-h-[60px] min-w-[60px] rounded-xl text-gray-400 active:text-pink-400 active:bg-pink-50 transition-all duration-200"
+          className="flex flex-col items-center justify-center py-2 px-4 min-h-[60px] min-w-[60px] rounded-lg text-slate-400 active:text-slate-600 active:bg-slate-50 transition-all"
           aria-label="更多选项"
         >
-          <MoreHorizontal size={24} strokeWidth={2} />
+          <MoreHorizontal size={22} strokeWidth={2} />
           <span className="text-[10px] mt-1 font-medium">更多</span>
         </button>
       </div>
     </nav>
   );
 }
-

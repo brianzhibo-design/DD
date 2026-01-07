@@ -28,7 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const hasCustomHeader = CUSTOM_HEADER_PAGES.some(page => pathname?.startsWith(page));
   
   return (
-    <div className="flex min-h-screen min-h-dvh bg-gray-50">
+    <div className="flex min-h-screen min-h-dvh bg-[#FAFAFA]">
       {/* 桌面端侧边栏 */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
