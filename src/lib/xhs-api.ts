@@ -13,6 +13,8 @@ async function apiRequest<T>(endpoint: string, body: object): Promise<T> {
     throw new Error('ONEAPI_KEY 未配置')
   }
 
+  console.log('[OneAPI] 请求:', endpoint, JSON.stringify(body))
+
   const response = await fetch(`${ONEAPI_BASE}${endpoint}`, {
     method: 'POST',
     headers: {
@@ -23,9 +25,9 @@ async function apiRequest<T>(endpoint: string, body: object): Promise<T> {
   })
 
   const result: ApiResponse<T> = await response.json()
+  console.log('[OneAPI] 响应:', result.code, result.message)
   
   if (result.code !== 200) {
-    console.error('[XHS API] 错误:', result)
     throw new Error(result.message || `API错误: ${result.code}`)
   }
 
@@ -34,83 +36,82 @@ async function apiRequest<T>(endpoint: string, body: object): Promise<T> {
 
 // 用户信息类型
 export interface XHSUserInfo {
+  nickname?: string
+  fansCount?: number | string
   basicInfo?: {
     nickname?: string
-    desc?: string
-    imageb?: string
+    fansCount?: number | string
   }
   interactions?: Array<{
     type?: string
-    count?: string
     name?: string
+    count?: number | string
   }>
-  tags?: Array<{
-    name?: string
-    tagType?: string
-  }>
-  [key: string]: unknown
+  [key: string]: any
 }
 
 // 笔记类型
 export interface XHSNote {
-  noteId?: string
   id?: string
+  noteId?: string
+  note_id?: string
+  xsecToken?: string
+  xsec_token?: string
   title?: string
   desc?: string
+  displayTitle?: string
   type?: string
   likedCount?: number | string
+  likes?: number | string
+  likeCount?: number | string
   collectedCount?: number | string
+  collects?: number | string
+  collectCount?: number | string
   commentCount?: number | string
-  shareCount?: number | string
+  comments?: number | string
   viewCount?: number | string
-  time?: number
-  xsecToken?: string
-  [key: string]: unknown
+  views?: number | string
+  readCount?: number | string
+  [key: string]: any
 }
 
-// 获取用户信息 V4
+// 获取用户信息 - 使用V4版本
 export async function fetchUserInfo(userId: string): Promise<XHSUserInfo> {
-  return apiRequest<XHSUserInfo>('/api/xiaohongshu/fetch_user_data_v4', { userId })
-}
-
-// 获取用户笔记列表
-export async function fetchUserNotes(userId: string, cursor?: string): Promise<{
-  notes: XHSNote[]
-  cursor?: string
-  hasMore?: boolean
-}> {
-  const data = await apiRequest<{ notes?: XHSNote[]; items?: XHSNote[]; cursor?: string; hasMore?: boolean }>(
-    '/api/xiaohongshu/fetch_user_video_list', 
-    { userId, cursor: cursor || '' }
-  )
-  
-  return {
-    notes: data.notes || data.items || [],
-    cursor: data.cursor,
-    hasMore: data.hasMore
-  }
-}
-
-// 获取笔记详情 V2
-export async function fetchNoteDetail(noteId: string, xsecToken: string): Promise<XHSNote> {
-  return apiRequest<XHSNote>('/api/xiaohongshu/fetch_video_detail_v2', { 
-    noteId, 
-    xsecToken 
+  return apiRequest<XHSUserInfo>('/api/xiaohongshu/fetch_user_data_v4', { 
+    userId 
   })
 }
 
-// 解析数字（处理"1.2万"这种格式）
-export function parseCount(value: unknown): number {
+// 获取用户笔记列表
+export async function fetchUserNotes(userId: string, cursor?: string): Promise<{ notes?: XHSNote[], items?: XHSNote[], list?: XHSNote[] }> {
+  return apiRequest<any>('/api/xiaohongshu/fetch_user_video_list', { 
+    userId,
+    cursor: cursor || ''
+  })
+}
+
+// 获取笔记详情V2
+export async function fetchNoteDetail(noteId: string, xsecToken: string): Promise<XHSNote> {
+  return apiRequest<XHSNote>('/api/xiaohongshu/fetch_video_detail_v2', { 
+    noteId,
+    xsecToken
+  })
+}
+
+// 解析数字（处理"1.2万"格式）
+export function parseCount(value: any): number {
+  if (value === null || value === undefined) return 0
   if (typeof value === 'number') return value
-  if (!value) return 0
   
-  const str = String(value).trim()
+  const str = String(value).trim().replace(/,/g, '')
+  
   if (str.includes('万')) {
     return Math.round(parseFloat(str) * 10000)
   }
-  if (str.includes('k') || str.includes('K')) {
+  if (str.toLowerCase().includes('k')) {
     return Math.round(parseFloat(str) * 1000)
   }
-  return parseInt(str) || 0
+  
+  const num = parseInt(str)
+  return isNaN(num) ? 0 : num
 }
-
