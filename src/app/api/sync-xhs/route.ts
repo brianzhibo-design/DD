@@ -130,15 +130,14 @@ export async function POST(request: NextRequest) {
     const weekEnd = getWeekEnd(new Date())
 
     // 获取上周数据计算增长
-    const { data: lastWeekData } = await supabase
+    const { data: lastWeekList } = await supabase
       .from('weekly_stats')
       .select('followers')
       .lt('week_start', weekStart)
       .order('week_start', { ascending: false })
       .limit(1)
-      .single()
 
-    const lastFollowers = lastWeekData?.followers || accountInfo.fans
+    const lastFollowers = lastWeekList?.[0]?.followers || accountInfo.fans
     const newFollowers = Math.max(0, accountInfo.fans - lastFollowers)
 
     await supabase.from('weekly_stats').upsert({
@@ -191,8 +190,8 @@ export async function GET() {
   try {
     // 并行获取所有数据
     const [accountRes, statsRes, notesRes, commentsRes] = await Promise.all([
-      supabase.from('account_info').select('*').eq('id', 'main').single(),
-      supabase.from('weekly_stats').select('*').order('week_start', { ascending: false }).limit(1).single(),
+      supabase.from('account_info').select('*').eq('id', 'main').limit(1),
+      supabase.from('weekly_stats').select('*').order('week_start', { ascending: false }).limit(1),
       supabase.from('notes').select('*').order('likes', { ascending: false }).limit(10),
       supabase.from('note_comments').select('*').order('created_at', { ascending: false }).limit(10)
     ])
@@ -200,8 +199,8 @@ export async function GET() {
     return NextResponse.json({ 
       status: 'ok',
       data: {
-        account: accountRes.data,
-        latestStats: statsRes.data,
+        account: accountRes.data?.[0] || null,
+        latestStats: statsRes.data?.[0] || null,
         topNotes: notesRes.data || [],
         recentComments: commentsRes.data || []
       },

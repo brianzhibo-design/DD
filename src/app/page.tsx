@@ -84,7 +84,10 @@ export default function HomePage() {
       const data = await res.json()
       if (data.success) {
         await loadData()
-        alert(`✅ 同步成功！(${data.data.duration})\n\n粉丝: ${formatNum(data.data.account.fans)}\n笔记: ${data.data.stats.savedNotes} 篇`)
+        const duration = data.data?.duration || ''
+        const fans = data.data?.account?.fans || 0
+        const notes = data.data?.stats?.savedNotes || 0
+        alert(`✅ 同步成功！${duration ? `(${duration})` : ''}\n\n粉丝: ${formatNum(fans)}\n笔记: ${notes} 篇`)
       } else {
         alert('❌ 同步失败: ' + data.error)
       }
@@ -94,9 +97,28 @@ export default function HomePage() {
     setSyncing(false)
   }
 
+  const syncDetails = async () => {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/sync-detail', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        await loadData()
+        const duration = data.data?.duration || ''
+        const processed = data.data?.processedNotes || 0
+        const comments = data.data?.savedComments || 0
+        alert(`✅ 详情同步完成！${duration ? `(${duration})` : ''}\n\n处理笔记: ${processed} 篇\n新增评论: ${comments} 条`)
+      } else {
+        alert('❌ 详情同步失败: ' + data.error)
+      }
+    } catch (e: any) {
+      alert('❌ 详情同步失败: ' + e.message)
+    }
+    setSyncing(false)
+  }
+
   useEffect(() => { loadData() }, [])
 
-  // 格式化数字
   const formatNum = (num: number) => {
     if (!num) return '0'
     if (num >= 10000) return (num / 10000).toFixed(1) + '万'
@@ -104,7 +126,6 @@ export default function HomePage() {
     return num.toString()
   }
 
-  // 格式化时间
   const formatTime = (str: string) => {
     if (!str) return ''
     return new Date(str).toLocaleString('zh-CN', { 
@@ -112,22 +133,18 @@ export default function HomePage() {
     })
   }
 
-  // 计算收藏率
   const collectRate = account?.total_likes 
     ? ((account.total_collected / account.total_likes) * 100).toFixed(1) 
     : '0'
 
-  // 计算互动率
   const interactRate = account?.fans 
     ? (((account.total_likes + account.total_collected) / account.fans) * 100).toFixed(0) 
     : '0'
 
-  // 计算粉赞比
   const fanLikeRatio = account?.fans && account?.total_likes 
     ? (account.total_likes / account.fans).toFixed(1) 
     : '0'
 
-  // 篇均数据
   const avgLikes = account?.notes_count && account?.total_likes 
     ? Math.round(account.total_likes / account.notes_count) 
     : 0
@@ -137,8 +154,8 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-orange-50/30 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-400">
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-[#6B7A74]">
           <RefreshCw className="w-5 h-5 animate-spin" />
           <span>加载中...</span>
         </div>
@@ -147,405 +164,344 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-orange-50/30 pb-24 lg:pb-0">
-      <div className="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-10">
-        
-        {/* 移动端顶部栏 */}
-        <div className="flex items-center justify-between mb-5 lg:hidden">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shadow-lg">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-gray-900">小离岛岛</h1>
-              <p className="text-[10px] text-gray-500">内容运营系统</p>
-            </div>
+    <div className="max-w-6xl mx-auto space-y-5 pb-24 lg:pb-8">
+      
+      {/* 移动端顶部栏 */}
+      <div className="flex items-center justify-between lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#2D4B3E] flex items-center justify-center shadow-lg shadow-[#2D4B3E]/20">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <Link 
-            href="/settings"
-            className="p-2.5 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
-          >
-            <Settings size={22} />
-          </Link>
+          <div>
+            <h1 className="text-base font-bold text-[#2D4B3E] font-serif">小离岛岛</h1>
+            <p className="text-[10px] text-[#6B7A74]">内容运营系统</p>
+          </div>
         </div>
+        <Link 
+          href="/settings"
+          className="p-2.5 rounded-xl text-[#6B7A74] hover:text-[#2D4B3E] hover:bg-[#F4F6F0] transition-all"
+        >
+          <Settings size={22} />
+        </Link>
+      </div>
 
-        {/* ========== 账号信息卡片 ========== */}
-        <div className="bg-white rounded-3xl p-5 md:p-8 shadow-sm border border-gray-100/80 mb-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+      {/* 账号信息卡片 */}
+      <div className="bg-white rounded-[2rem] p-5 md:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#2D4B3E]/5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          
+          <div className="flex items-center gap-4">
+            <div className="p-0.5 rounded-full bg-gradient-to-tr from-[#2D4B3E] via-[#426B5A] to-[#C5A267] flex-shrink-0">
+              {account?.avatar ? (
+                <img 
+                  src={account.avatar} 
+                  alt={account.nickname}
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover bg-white border-2 border-white"
+                />
+              ) : (
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#F4F6F0] flex items-center justify-center border-2 border-white">
+                  <Sparkles className="w-6 h-6 text-[#2D4B3E]" />
+                </div>
+              )}
+            </div>
             
-            {/* 左侧：头像和信息 */}
-            <div className="flex items-center gap-4 md:gap-5">
-              {/* 头像 - 渐变边框 */}
-              <div className="p-0.5 md:p-1 rounded-full bg-gradient-to-tr from-rose-500 via-orange-400 to-amber-400 flex-shrink-0">
-                {account?.avatar ? (
-                  <img 
-                    src={account.avatar} 
-                    alt={account.nickname}
-                    className="w-16 h-16 md:w-24 md:h-24 rounded-full object-cover bg-white border-2 border-white"
-                  />
-                ) : (
-                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-rose-100 to-orange-100 flex items-center justify-center border-2 border-white">
-                    <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-rose-400" />
-                  </div>
-                )}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl md:text-2xl font-bold text-[#1A2421] font-serif truncate">
+                  {account?.nickname || '小红书账号'}
+                </h2>
+                <span className="hidden sm:inline-block px-2 py-0.5 bg-[#2D4B3E] text-white text-[10px] font-bold rounded-full">
+                  创作者
+                </span>
               </div>
               
-              {/* 账号信息 */}
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 md:gap-3 mb-1">
-                  <h2 className="text-xl md:text-3xl font-bold text-gray-900 truncate">
-                    {account?.nickname || '小红书账号'}
-                  </h2>
-                  <span className="hidden sm:inline-block px-2.5 py-0.5 bg-gradient-to-r from-rose-500 to-orange-400 text-white text-xs font-medium rounded-full shadow-sm flex-shrink-0">
-                    创作者
-                  </span>
+              <div className="flex items-center gap-2 text-xs text-[#6B7A74]">
+                <span>{account?.red_id || '-'}</span>
+                {account?.ip_location && (
+                  <>
+                    <span className="text-[#9BA8A3]">·</span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {account.ip_location}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {account?.updated_at && (
+              <span className="text-xs text-[#9BA8A3] hidden md:flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {formatTime(account.updated_at)}
+              </span>
+            )}
+            <button
+              onClick={syncData}
+              disabled={syncing}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#2D4B3E] text-white rounded-full hover:bg-[#3D6654] disabled:opacity-50 transition-all text-sm font-bold shadow-lg shadow-[#2D4B3E]/20"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? '同步中...' : '同步'}
+            </button>
+            <button
+              onClick={syncDetails}
+              disabled={syncing}
+              className="px-3 py-2.5 bg-white border border-[#2D4B3E]/20 text-[#2D4B3E] rounded-full hover:bg-[#F4F6F0] disabled:opacity-50 transition-all text-xs font-medium"
+              title="同步笔记详情和评论"
+            >
+              详情
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 核心数据卡片 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* 粉丝数 */}
+        <div className="bg-[#2D4B3E] rounded-[2rem] p-5 text-white relative overflow-hidden shadow-lg shadow-[#2D4B3E]/20">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <Users className="w-4 h-4 text-white/80" />
+              </div>
+              <span className="text-xs text-white/60 font-bold uppercase tracking-wider">粉丝总数</span>
+            </div>
+            <div className="text-3xl font-black font-serif mb-1">
+              {formatNum(account?.fans || 0)}
+            </div>
+            {stats?.new_followers && stats.new_followers > 0 ? (
+              <div className="flex items-center gap-1 text-emerald-300 text-xs">
+                <ArrowUpRight className="w-3.5 h-3.5" />
+                本周 +{formatNum(stats.new_followers)}
+              </div>
+            ) : (
+              <div className="text-xs text-white/40">关注 {account?.follows || 0}</div>
+            )}
+          </div>
+        </div>
+
+        {/* 获赞数 */}
+        <div className="bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
+              <Heart className="w-4 h-4 text-rose-500" fill="currentColor" />
+            </div>
+            <span className="text-xs text-[#6B7A74] font-bold uppercase tracking-wider">获赞总数</span>
+          </div>
+          <div className="text-3xl font-black text-[#1A2421] font-serif mb-1">
+            {formatNum(account?.total_likes || 0)}
+          </div>
+          <div className="text-xs text-[#9BA8A3]">
+            篇均 <span className="text-[#6B7A74] font-medium">{formatNum(avgLikes)}</span>
+          </div>
+        </div>
+
+        {/* 收藏数 */}
+        <div className="bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-[#C5A267]/10 flex items-center justify-center">
+              <Bookmark className="w-4 h-4 text-[#C5A267]" />
+            </div>
+            <span className="text-xs text-[#6B7A74] font-bold uppercase tracking-wider">被收藏数</span>
+          </div>
+          <div className="text-3xl font-black text-[#1A2421] font-serif mb-1">
+            {formatNum(account?.total_collected || 0)}
+          </div>
+          <div className="text-xs text-[#9BA8A3]">
+            篇均 <span className="text-[#6B7A74] font-medium">{formatNum(avgCollects)}</span>
+          </div>
+        </div>
+
+        {/* 笔记数 */}
+        <div className="bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-[#2D4B3E]/5 flex items-center justify-center">
+              <FileText className="w-4 h-4 text-[#2D4B3E]" />
+            </div>
+            <span className="text-xs text-[#6B7A74] font-bold uppercase tracking-wider">笔记总数</span>
+          </div>
+          <div className="text-3xl font-black text-[#1A2421] font-serif mb-1">
+            {account?.notes_count || 0}
+          </div>
+          <div className="text-xs text-[#9BA8A3]">持续创作中</div>
+        </div>
+      </div>
+
+      {/* 关键指标 + 热门笔记 */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        {/* 关键指标 */}
+        <div className="lg:col-span-4 bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <h2 className="text-base font-bold text-[#1A2421] mb-4 font-serif">关键指标</h2>
+          
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs text-[#6B7A74]">收藏率（核心指标）</span>
+                <span className="text-base font-bold text-[#2D4B3E]">{collectRate}%</span>
+              </div>
+              <div className="h-2 bg-[#F4F6F0] rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#2D4B3E] rounded-full"
+                  style={{ width: `${Math.min(100, parseFloat(collectRate) * 10)}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-[#9BA8A3] mt-1">收藏/点赞，建议 &gt; 5%</p>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-[#6B7A74]">互动率</span>
+                <span className="text-base font-bold text-[#2D4B3E]">{interactRate}%</span>
+              </div>
+              <p className="text-[10px] text-[#9BA8A3]">（点赞+收藏）/ 粉丝</p>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-[#6B7A74]">粉赞比</span>
+                <span className="text-base font-bold text-[#2D4B3E]">1 : {fanLikeRatio}</span>
+              </div>
+              <p className="text-[10px] text-[#9BA8A3]">粉丝 : 获赞，越高内容质量越好</p>
+            </div>
+
+            <div className="border-t border-[#2D4B3E]/5 pt-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-[#F4F6F0] rounded-xl">
+                  <p className="text-xl font-bold text-[#1A2421]">{formatNum(avgLikes)}</p>
+                  <p className="text-[10px] text-[#6B7A74] mt-1">篇均点赞</p>
+                </div>
+                <div className="text-center p-3 bg-[#F4F6F0] rounded-xl">
+                  <p className="text-xl font-bold text-[#1A2421]">{formatNum(avgCollects)}</p>
+                  <p className="text-[10px] text-[#6B7A74] mt-1">篇均收藏</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 热门笔记 */}
+        <div className="lg:col-span-8 bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-[#1A2421] font-serif">热门笔记 TOP5</h2>
+            <Link href="/analytics" className="text-xs text-[#6B7A74] hover:text-[#2D4B3E]">
+              查看全部 →
+            </Link>
+          </div>
+          
+          <div className="space-y-2">
+            {topNotes.length > 0 ? topNotes.slice(0, 5).map((note, index) => (
+              <div 
+                key={note.id}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F6F0] transition-colors"
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                  index < 3 ? 'bg-[#2D4B3E] text-white' : 'bg-[#F4F6F0] text-[#6B7A74]'
+                }`}>
+                  {index + 1}
                 </div>
                 
-                <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-500 mb-1">
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" />
-                    {account?.red_id || '-'}
-                  </span>
-                  {account?.ip_location && (
-                    <>
-                      <span className="text-gray-300">·</span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5" />
-                        {account.ip_location}
-                      </span>
-                    </>
+                <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#F4F6F0]">
+                  {note.cover_image ? (
+                    <img src={note.cover_image} alt={note.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-[#9BA8A3]" />
+                    </div>
                   )}
                 </div>
                 
-                {account?.description && (
-                  <p className="text-xs md:text-sm text-gray-400 max-w-md line-clamp-1 hidden sm:block">
-                    {account.description}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* 右侧：同步按钮 */}
-            <div className="flex items-center gap-3 md:gap-4">
-              {account?.updated_at && (
-                <div className="text-right hidden md:block">
-                  <p className="text-xs text-gray-400">上次同步</p>
-                  <p className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {formatTime(account.updated_at)}
-                  </p>
-                </div>
-              )}
-              <button
-                onClick={syncData}
-                disabled={syncing}
-                className="group flex items-center gap-2 px-5 md:px-6 py-2.5 md:py-3 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 disabled:opacity-60 transition-all shadow-lg shadow-gray-900/20 font-medium text-sm md:text-base"
-              >
-                <RefreshCw className={`w-4 h-4 md:w-5 md:h-5 transition-transform duration-500 ${syncing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-                {syncing ? '同步中...' : '同步数据'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ========== 核心数据卡片 ========== */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-5">
-          
-          {/* 粉丝数 - 深色主卡片 */}
-          <div className="bg-gray-900 rounded-2xl md:rounded-3xl p-4 md:p-6 text-white relative overflow-hidden group hover:shadow-xl hover:shadow-gray-900/20 transition-all">
-            <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3 md:mb-4">
-                <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-white/80" />
-                </div>
-                <span className="text-xs md:text-sm text-white/60">粉丝总数</span>
-              </div>
-              <div className="text-2xl md:text-4xl font-bold mb-1 md:mb-2">
-                {formatNum(account?.fans || 0)}
-              </div>
-              {stats?.new_followers && stats.new_followers > 0 ? (
-                <div className="flex items-center gap-1 text-emerald-400 text-xs md:text-sm">
-                  <ArrowUpRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  本周 +{formatNum(stats.new_followers)}
-                </div>
-              ) : (
-                <div className="text-xs md:text-sm text-white/40">本周暂无新增</div>
-              )}
-            </div>
-          </div>
-
-          {/* 获赞数 */}
-          <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 border border-gray-100 hover:shadow-lg hover:shadow-gray-100 transition-all">
-            <div className="flex items-center gap-2 mb-3 md:mb-4">
-              <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-rose-50 flex items-center justify-center">
-                <Heart className="w-4 h-4 text-rose-500" fill="currentColor" />
-              </div>
-              <span className="text-xs md:text-sm text-gray-500">获赞总数</span>
-            </div>
-            <div className="text-2xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-2">
-              {formatNum(account?.total_likes || 0)}
-            </div>
-            <div className="text-xs md:text-sm text-gray-400">
-              篇均 <span className="text-gray-600 font-medium">{formatNum(avgLikes)}</span>
-            </div>
-          </div>
-
-          {/* 收藏数 */}
-          <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 border border-gray-100 hover:shadow-lg hover:shadow-gray-100 transition-all">
-            <div className="flex items-center gap-2 mb-3 md:mb-4">
-              <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-amber-50 flex items-center justify-center">
-                <Bookmark className="w-4 h-4 text-amber-500" />
-              </div>
-              <span className="text-xs md:text-sm text-gray-500">被收藏数</span>
-            </div>
-            <div className="text-2xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-2">
-              {formatNum(account?.total_collected || 0)}
-            </div>
-            <div className="text-xs md:text-sm text-gray-400">
-              篇均 <span className="text-gray-600 font-medium">{formatNum(avgCollects)}</span>
-            </div>
-          </div>
-
-          {/* 笔记数 */}
-          <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 border border-gray-100 hover:shadow-lg hover:shadow-gray-100 transition-all">
-            <div className="flex items-center gap-2 mb-3 md:mb-4">
-              <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-blue-50 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-blue-500" />
-              </div>
-              <span className="text-xs md:text-sm text-gray-500">笔记总数</span>
-            </div>
-            <div className="text-2xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-2">
-              {account?.notes_count || 0}
-            </div>
-            <div className="text-xs md:text-sm text-gray-400">
-              关注 <span className="text-gray-600 font-medium">{account?.follows || 0}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ========== 关键指标 + 热门笔记 ========== */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 mb-5">
-          
-          {/* 关键指标 */}
-          <div className="lg:col-span-4 bg-white rounded-2xl md:rounded-3xl p-5 md:p-6 border border-gray-100">
-            <h2 className="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-5 flex items-center gap-2">
-              <span className="text-lg md:text-xl">📊</span> 关键指标
-            </h2>
-            
-            <div className="space-y-4 md:space-y-5">
-              {/* 收藏率 */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs md:text-sm text-gray-600">收藏率（核心指标）</span>
-                  <span className="text-base md:text-lg font-bold text-rose-500">{collectRate}%</span>
-                </div>
-                <div className="h-2 md:h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min(100, parseFloat(collectRate) * 10)}%` }}
-                  />
-                </div>
-                <p className="text-[10px] md:text-xs text-gray-400 mt-1.5">收藏/点赞，建议 &gt; 5%</p>
-              </div>
-
-              {/* 互动率 */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs md:text-sm text-gray-600">互动率</span>
-                  <span className="text-base md:text-lg font-bold text-blue-500">{interactRate}%</span>
-                </div>
-                <div className="h-2 md:h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-1000"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-                <p className="text-[10px] md:text-xs text-gray-400 mt-1.5">（点赞+收藏）/ 粉丝</p>
-              </div>
-
-              {/* 粉赞比 */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs md:text-sm text-gray-600">粉赞比</span>
-                  <span className="text-base md:text-lg font-bold text-emerald-500">1 : {fanLikeRatio}</span>
-                </div>
-                <p className="text-[10px] md:text-xs text-gray-400">粉丝 : 获赞，越高内容质量越好</p>
-              </div>
-
-              {/* 篇均数据 */}
-              <div className="border-t border-gray-100 pt-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 md:p-3.5 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl">
-                    <p className="text-xl md:text-2xl font-bold text-gray-900">{formatNum(avgLikes)}</p>
-                    <p className="text-[10px] md:text-xs text-gray-500 mt-1">篇均点赞</p>
-                  </div>
-                  <div className="text-center p-3 md:p-3.5 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl">
-                    <p className="text-xl md:text-2xl font-bold text-gray-900">{formatNum(avgCollects)}</p>
-                    <p className="text-[10px] md:text-xs text-gray-500 mt-1">篇均收藏</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 热门笔记 TOP5 */}
-          <div className="lg:col-span-8 bg-white rounded-2xl md:rounded-3xl p-5 md:p-6 border border-gray-100">
-            <div className="flex items-center justify-between mb-4 md:mb-5">
-              <h2 className="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
-                <span className="text-lg md:text-xl">🔥</span> 热门笔记
-              </h2>
-              <Link href="/analytics" className="text-xs md:text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                查看全部 →
-              </Link>
-            </div>
-            
-            <div className="space-y-1 md:space-y-2">
-              {topNotes.length > 0 ? topNotes.slice(0, 5).map((note, index) => (
-                <div 
-                  key={note.id}
-                  className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 rounded-xl md:rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group"
-                >
-                  {/* 排名 */}
-                  <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold flex-shrink-0 ${
-                    index < 3 
-                      ? 'bg-gray-900 text-white' 
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {index + 1}
-                  </div>
-                  
-                  {/* 封面 */}
-                  <div className="w-11 h-11 md:w-14 md:h-14 rounded-lg md:rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                    {note.cover_image ? (
-                      <img 
-                        src={note.cover_image} 
-                        alt={note.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <FileText className="w-5 h-5 md:w-6 md:h-6 text-gray-300" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* 标题和数据 */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm md:text-base font-medium text-gray-900 truncate group-hover:text-gray-700">
-                      {note.title || '无标题'}
-                    </p>
-                    <div className="flex items-center gap-3 md:gap-4 mt-1 md:mt-1.5 text-xs md:text-sm text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3 h-3 md:w-3.5 md:h-3.5 text-rose-400" fill="currentColor" />
-                        {formatNum(note.likes)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Bookmark className="w-3 h-3 md:w-3.5 md:h-3.5 text-amber-400" />
-                        {formatNum(note.collects)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3 md:w-3.5 md:h-3.5 text-blue-400" />
-                        {note.comments}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* 类型标签 */}
-                  <div className="flex-shrink-0 hidden sm:block">
-                    <span className={`text-xs px-2 md:px-2.5 py-0.5 md:py-1 rounded-full ${
-                      note.type === '视频' 
-                        ? 'bg-purple-50 text-purple-600' 
-                        : 'bg-blue-50 text-blue-600'
-                    }`}>
-                      {note.type}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#1A2421] truncate">{note.title || '无标题'}</p>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[#6B7A74]">
+                    <span className="flex items-center gap-1">
+                      <Heart className="w-3 h-3 text-rose-400" fill="currentColor" />
+                      {formatNum(note.likes)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Bookmark className="w-3 h-3 text-[#C5A267]" />
+                      {formatNum(note.collects)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageCircle className="w-3 h-3 text-[#2D4B3E]" />
+                      {note.comments}
                     </span>
                   </div>
                 </div>
-              )) : (
-                <div className="text-center py-10 md:py-12 text-gray-400">
-                  <FileText className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 text-gray-200" />
-                  <p className="text-sm">点击"同步数据"获取笔记</p>
-                </div>
-              )}
-            </div>
+                
+                <span className={`text-[10px] px-2 py-0.5 rounded-full hidden sm:block ${
+                  note.type === '视频' ? 'bg-purple-50 text-purple-600' : 'bg-[#2D4B3E]/5 text-[#2D4B3E]'
+                }`}>
+                  {note.type}
+                </span>
+              </div>
+            )) : (
+              <div className="text-center py-10 text-[#9BA8A3]">
+                <FileText className="w-10 h-10 mx-auto mb-3 text-[#F4F6F0]" />
+                <p className="text-sm">点击"同步"获取笔记数据</p>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* ========== 最新评论 ========== */}
-        {recentComments.length > 0 && (
-          <div className="bg-white rounded-2xl md:rounded-3xl p-5 md:p-6 border border-gray-100 mb-5">
-            <h2 className="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-5 flex items-center gap-2">
-              <span className="text-lg md:text-xl">💬</span> 最新评论
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {recentComments.slice(0, 6).map((comment) => (
-                <div 
-                  key={comment.id}
-                  className="flex gap-3 p-3 md:p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/30 hover:from-gray-100/50 hover:to-gray-100/50 transition-colors"
-                >
-                  {comment.user_avatar ? (
-                    <img 
-                      src={comment.user_avatar} 
-                      alt={comment.user_nickname}
-                      className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-200 flex-shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5 md:mb-1">
-                      <span className="text-xs md:text-sm font-medium text-gray-900 truncate">
-                        {comment.user_nickname}
-                      </span>
-                      {comment.ip_location && (
-                        <span className="text-[10px] md:text-xs text-gray-400">{comment.ip_location}</span>
-                      )}
-                    </div>
-                    <p className="text-xs md:text-sm text-gray-600 line-clamp-2">
-                      {comment.content}
-                    </p>
-                    {comment.created_at && (
-                      <p className="text-[10px] md:text-xs text-gray-400 mt-1 md:mt-1.5">
-                        {formatTime(comment.created_at)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ========== 粉丝画像 ========== */}
-        <div className="bg-white rounded-2xl md:rounded-3xl p-5 md:p-6 border border-gray-100">
-          <h2 className="text-base md:text-lg font-bold text-gray-900 mb-4 md:mb-5 flex items-center gap-2">
-            <span className="text-lg md:text-xl">👥</span> 粉丝画像
-          </h2>
+      {/* 最新评论 */}
+      {recentComments.length > 0 && (
+        <div className="bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <h2 className="text-base font-bold text-[#1A2421] mb-4 font-serif">最新评论</h2>
           
-          <div className="max-w-xl">
-            <div className="flex justify-between text-xs md:text-sm mb-2 md:mb-3">
-              <span className="text-rose-500 font-medium">👩 女性</span>
-              <span className="text-blue-500 font-medium">👨 男性</span>
-            </div>
-            <div className="h-3 md:h-4 bg-gray-100 rounded-full overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {recentComments.slice(0, 6).map((comment) => (
               <div 
-                className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all duration-1000"
-                style={{ width: `${stats?.female_ratio || 85}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-xs md:text-sm font-bold mt-2">
-              <span className="text-rose-500">{stats?.female_ratio || 85}%</span>
-              <span className="text-blue-500">{100 - (stats?.female_ratio || 85)}%</span>
-            </div>
+                key={comment.id}
+                className="flex gap-3 p-3 rounded-xl bg-[#FDFBF7] border border-[#2D4B3E]/5"
+              >
+                {comment.user_avatar ? (
+                  <img src={comment.user_avatar} alt={comment.user_nickname} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-[#F4F6F0] flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-bold text-[#1A2421] truncate">{comment.user_nickname}</span>
+                    {comment.ip_location && <span className="text-[10px] text-[#9BA8A3]">{comment.ip_location}</span>}
+                  </div>
+                  <p className="text-xs text-[#6B7A74] line-clamp-2">{comment.content}</p>
+                  {comment.created_at && <p className="text-[10px] text-[#9BA8A3] mt-1">{formatTime(comment.created_at)}</p>}
+                </div>
+              </div>
+            ))}
           </div>
-          
-          <p className="text-[10px] md:text-xs text-gray-400 mt-3 md:mt-4">
-            * 根据小红书平台特征估算，精准数据需通过蒲公英后台获取
-          </p>
         </div>
+      )}
 
+      {/* 粉丝画像 */}
+      <div className="bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <h2 className="text-base font-bold text-[#1A2421] mb-4 font-serif">粉丝画像</h2>
+        
+        <div className="max-w-xl">
+          <div className="flex justify-between text-xs mb-2">
+            <span className="text-rose-500 font-bold">女性</span>
+            <span className="text-[#2D4B3E] font-bold">男性</span>
+          </div>
+          <div className="h-3 bg-[#F4F6F0] rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full"
+              style={{ width: `${stats?.female_ratio || 85}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs font-bold mt-2">
+            <span className="text-rose-500">{stats?.female_ratio || 85}%</span>
+            <span className="text-[#2D4B3E]">{100 - (stats?.female_ratio || 85)}%</span>
+          </div>
+        </div>
+        
+        <p className="text-[10px] text-[#9BA8A3] mt-4">
+          * 根据小红书平台特征估算，精准数据需通过蒲公英后台获取
+        </p>
       </div>
     </div>
   )

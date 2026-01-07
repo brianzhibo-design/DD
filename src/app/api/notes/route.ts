@@ -6,7 +6,7 @@ export async function GET() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
   if (!url || !key) {
-    return NextResponse.json({ success: false, error: 'Supabase 未配置' }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Supabase 未配置', data: [] })
   }
 
   const supabase = createClient(url, key)
@@ -18,11 +18,15 @@ export async function GET() {
       .order('likes', { ascending: false })
       .limit(50)
 
-    if (error) throw error
+    if (error) {
+      console.error('[notes] 查询失败:', error)
+      return NextResponse.json({ success: false, error: error.message, data: [] })
+    }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ success: true, data: data || [] })
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 })
+    console.error('[notes] 异常:', e)
+    return NextResponse.json({ success: false, error: e.message, data: [] })
   }
 }
 
