@@ -16,11 +16,23 @@ export default function Home() {
   const [weeklyData, setWeeklyData] = useState<WeeklyStat | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile>({});
+  const [greeting, setGreeting] = useState('你好');
+  const [currentDate, setCurrentDate] = useState('');
   
   useEffect(() => {
     loadData();
     setUserProfile(getUserProfile());
     loadUserProfile().then(setUserProfile);
+    
+    // 设置问候语和日期（只在客户端）
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('早上好');
+    else if (hour < 18) setGreeting('下午好');
+    else setGreeting('晚上好');
+    
+    setCurrentDate(new Date().toLocaleDateString('zh-CN', { 
+      year: 'numeric', month: 'long', day: 'numeric' 
+    }));
   }, []);
 
   const loadData = async () => {
@@ -54,13 +66,6 @@ export default function Home() {
     { text: '录入本周运营数据', checked: false },
   ];
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return '早上好';
-    if (hour < 18) return '下午好';
-    return '晚上好';
-  };
-
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-8">
       {/* Hero Header */}
@@ -73,16 +78,18 @@ export default function Home() {
           </div>
           
           <h1 className="text-3xl font-bold mb-2 tracking-tight font-serif">
-            {getGreeting()}，{userProfile.nickname || '岛主'}
+            {greeting}，{userProfile.nickname || '岛主'}
           </h1>
           <p className="text-white/70 text-sm">
             今天的数据表现平稳，保持专注
           </p>
         </div>
         
-        <div className="absolute top-8 right-8 text-xs text-white/50 font-mono hidden md:block">
-          {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </div>
+        {currentDate && (
+          <div className="absolute top-8 right-8 text-xs text-white/50 font-mono hidden md:block">
+            {currentDate}
+          </div>
+        )}
       </div>
       
       {/* Stats Grid */}
