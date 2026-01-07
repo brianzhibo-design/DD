@@ -5,7 +5,6 @@ export const maxDuration = 25
 
 const ONEAPI_BASE = 'https://api.getoneapi.com'
 
-// 获取 Supabase 客户端
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -13,12 +12,9 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-// OneAPI请求
 async function oneApiRequest(endpoint: string, body: object) {
   const apiKey = process.env.ONEAPI_KEY
   if (!apiKey) throw new Error('ONEAPI_KEY 未配置')
-
-  console.log(`[OneAPI] 请求: ${endpoint}`)
 
   const response = await fetch(`${ONEAPI_BASE}${endpoint}`, {
     method: 'POST',
@@ -39,158 +35,154 @@ async function oneApiRequest(endpoint: string, body: object) {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ success: false, error: 'Supabase 未配置' }, { status: 500 })
+  }
+
   try {
     const userId = process.env.XHS_USER_ID
     if (!userId) {
       return NextResponse.json({ success: false, error: '未配置 XHS_USER_ID' }, { status: 500 })
     }
 
-    const supabase = getSupabase()
-    if (!supabase) {
-      return NextResponse.json({ success: false, error: 'Supabase 未配置' }, { status: 500 })
-    }
-
     console.log('[同步开始] userId:', userId)
 
-    // ====== 1. 获取用户信息 ======
+    // ========== 1. 获取用户信息 ==========
     const userResult = await oneApiRequest('/api/xiaohongshu/fetch_user_data_v4', { userId })
-    
-    // 解析用户数据 - 数据可能在 data.data 或直接在 data 里
     const userData = userResult.data || userResult
     
-    const nickname = userData.nickname || '未知'
-    const fans = parseInt(userData.fans) || 0
-    const follows = parseInt(userData.follows) || 0
-    const liked = parseInt(userData.liked) || 0  // 总获赞数
-    const collected = parseInt(userData.collected) || 0  // 总被收藏数
-    const ndiscovery = parseInt(userData.ndiscovery) || 0  // 笔记数
-    const ipLocation = userData.ip_location || ''
-    const redId = userData.red_id || ''
+    const accountInfo = {
+      id: 'main',
+      nickname: userData.nickname || '未知',
+      red_id: userData.red_id || '',
+      avatar: userData.images || '',
+      description: userData.desc || '',
+      ip_location: userData.ip_location || '',
+      fans: parseInt(userData.fans) || 0,
+      follows: parseInt(userData.follows) || 0,
+      total_likes: parseInt(userData.liked) || 0,
+      total_collected: parseInt(userData.collected) || 0,
+      notes_count: parseInt(userData.ndiscovery) || 0,
+      updated_at: new Date().toISOString()
+    }
 
-    console.log(`[用户信息] 昵称:${nickname} 粉丝:${fans} 获赞:${liked} 收藏:${collected} 笔记:${ndiscovery}`)
+    // 保存账号信息
+    await supabase.from('account_info').upsert(accountInfo, { onConflict: 'id' })
 
-    // ====== 2. 获取笔记列表 ======
+    console.log(`[用户信息] ${accountInfo.nickname} | 粉丝:${accountInfo.fans} | 获赞:${accountInfo.total_likes}`)
+
+    // ========== 2. 获取笔记列表 ==========
     const notesResult = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', { userId })
     const notes = notesResult.notes || []
     
     console.log(`[笔记列表] 获取到 ${notes.length} 篇笔记`)
 
-    // ====== 3. 处理所有笔记数据 ======
-    let totalNoteLikes = 0
-    let totalNoteCollects = 0
-    let totalNoteComments = 0
-    let totalNoteViews = 0
+    // ========== 3. 处理并保存笔记数据 ==========
+    let totalLikes = 0
+    let totalCollects = 0
+    let totalComments = 0
+    let totalShares = 0
     let savedNotes = 0
 
-    // 处理所有笔记（不限制数量）
     for (const note of notes) {
-      const noteId = note.note_id || note.id || note.cursor
-      
-      // 提取笔记数据
-      const likeCount = parseInt(note.liked_count) || parseInt(note.likedCount) || 0
-      const collectCount = parseInt(note.collected_count) || parseInt(note.collectedCount) || 0
-      const commentCount = parseInt(note.comment_count) || parseInt(note.commentCount) || 0
-      const viewCount = parseInt(note.view_count) || parseInt(note.viewCount) || 0
-      
-      const title = note.display_title || note.title || note.desc || ''
+      const noteId = note.id || note.note_id || note.cursor
+      if (!noteId) continue
+
+      const likes = parseInt(note.likes) || parseInt(note.liked_count) || 0
+      const collects = parseInt(note.collected_count) || parseInt(note.collects) || 0
+      const comments = parseInt(note.comments_count) || parseInt(note.comments) || 0
+      const shares = parseInt(note.share_count) || 0
+      const niceCount = parseInt(note.nice_count) || 0
+      const title = note.display_title || note.title || note.desc?.substring(0, 50) || '无标题'
       const noteType = note.type === 'video' ? '视频' : '图文'
-      const cover = note.cover?.url_default || note.cover?.url || ''
+      const publishDate = note.time_desc || null
+      const coverImage = note.images_list?.[0]?.url_size_large || 
+                        note.images_list?.[0]?.url || 
+                        note.video_info_v2?.image?.thumbnail ||
+                        note.cover?.url_default ||
+                        note.cover?.url || ''
 
-      totalNoteLikes += likeCount
-      totalNoteCollects += collectCount
-      totalNoteComments += commentCount
-      totalNoteViews += viewCount
+      totalLikes += likes
+      totalCollects += collects
+      totalComments += comments
+      totalShares += shares
 
-      // 保存到数据库
-      if (noteId) {
-        const { error } = await supabase.from('notes').upsert({
-          id: noteId,
-          title: title.substring(0, 200),
-          type: noteType,
-          status: 'published',
-          likes: likeCount,
-          collects: collectCount,
-          comments: commentCount,
-          views: viewCount,
-          cover_url: cover,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' })
+      const { error } = await supabase.from('notes').upsert({
+        id: noteId,
+        title: title.substring(0, 200),
+        content: note.desc || '',
+        type: noteType,
+        status: 'published',
+        likes: likes,
+        collects: collects,
+        comments: comments,
+        shares: shares,
+        nice_count: niceCount,
+        views: 0,
+        cover_image: coverImage,
+        publish_date: publishDate,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' })
 
-        if (!error) {
-          savedNotes++
-        } else {
-          console.error(`[笔记保存失败] ${noteId}:`, error.message)
-        }
-      }
+      if (!error) savedNotes++
     }
 
-    console.log(`[笔记统计] 点赞:${totalNoteLikes} 收藏:${totalNoteCollects} 评论:${totalNoteComments} 浏览:${totalNoteViews}`)
-    console.log(`[笔记保存] 成功保存 ${savedNotes}/${notes.length} 篇`)
+    console.log(`[笔记保存] 成功保存 ${savedNotes} 篇`)
 
-    // ====== 4. 获取上周数据计算增量 ======
-    const today = new Date()
-    const weekStart = getWeekStart(today)
-    const weekEnd = getWeekEnd(today)
+    // ========== 4. 保存周统计数据 ==========
+    const weekStart = getWeekStart(new Date())
+    const weekEnd = getWeekEnd(new Date())
 
-    // 查询上周数据
+    // 获取上周数据计算增长
     const { data: lastWeekData } = await supabase
       .from('weekly_stats')
-      .select('followers')
+      .select('*')
       .lt('week_start', weekStart)
       .order('week_start', { ascending: false })
       .limit(1)
       .single()
 
-    const lastFollowers = lastWeekData?.followers || fans
-    const newFollowers = Math.max(0, fans - lastFollowers)
+    const lastFollowers = lastWeekData?.followers || accountInfo.fans
+    const lastLikes = lastWeekData?.likes || accountInfo.total_likes
+    const lastSaves = lastWeekData?.saves || accountInfo.total_collected
+    
+    const newFollowers = Math.max(0, accountInfo.fans - lastFollowers)
 
-    console.log(`[增量计算] 上周粉丝:${lastFollowers} 本周粉丝:${fans} 新增:${newFollowers}`)
-
-    // ====== 5. 保存周统计 ======
-    const weeklyData = {
+    await supabase.from('weekly_stats').upsert({
       week_start: weekStart,
       week_end: weekEnd,
-      followers: fans,
+      followers: accountInfo.fans,
       new_followers: newFollowers,
-      likes: liked,           // 用户总获赞
-      saves: collected,       // 用户总被收藏
-      comments: totalNoteComments,  // 笔记评论总和
-      views: totalNoteViews,        // 笔记浏览总和（如果API没返回则为0）
-      posts_count: ndiscovery || notes.length,
-      female_ratio: 85  // 默认值，需要从其他渠道获取
-    }
+      likes: accountInfo.total_likes,
+      saves: accountInfo.total_collected,
+      comments: totalComments,
+      shares: totalShares,
+      views: 0,
+      posts_count: accountInfo.notes_count,
+      female_ratio: 85
+    }, { onConflict: 'week_start' })
 
-    console.log('[周统计数据]', JSON.stringify(weeklyData))
+    console.log('[周统计] 保存成功')
 
-    const { error: statsError } = await supabase
-      .from('weekly_stats')
-      .upsert(weeklyData, { onConflict: 'week_start' })
-
-    if (statsError) {
-      console.error('[周统计保存失败]', statsError)
-    } else {
-      console.log('[周统计保存成功]')
-    }
-
+    // ========== 5. 返回完整数据 ==========
     return NextResponse.json({
       success: true,
-      message: '同步成功！',
+      message: '数据同步成功！',
       data: {
-        nickname,
-        redId,
-        ipLocation,
-        followers: fans,
-        following: follows,
-        totalLikes: liked,
-        totalCollected: collected,
-        notesCount: ndiscovery || notes.length,
-        savedNotes,
-        newFollowers,
-        noteStats: {
-          likes: totalNoteLikes,
-          collects: totalNoteCollects,
-          comments: totalNoteComments,
-          views: totalNoteViews
+        account: accountInfo,
+        stats: {
+          notesCount: notes.length,
+          savedNotes,
+          totalLikes,
+          totalCollects,
+          totalComments,
+          totalShares
+        },
+        weeklyGrowth: {
+          followers: newFollowers,
+          likes: accountInfo.total_likes - lastLikes,
+          saves: accountInfo.total_collected - lastSaves
         }
       }
     })
@@ -219,11 +211,44 @@ function getWeekEnd(date: Date): string {
 }
 
 export async function GET() {
-  return NextResponse.json({ 
-    status: 'ok',
-    config: {
-      ONEAPI_KEY: process.env.ONEAPI_KEY ? '已配置' : '未配置',
-      XHS_USER_ID: process.env.XHS_USER_ID || '未配置'
-    }
-  })
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ status: 'ok', data: null })
+  }
+
+  try {
+    const { data: account } = await supabase
+      .from('account_info')
+      .select('*')
+      .eq('id', 'main')
+      .single()
+
+    const { data: latestStats } = await supabase
+      .from('weekly_stats')
+      .select('*')
+      .order('week_start', { ascending: false })
+      .limit(1)
+      .single()
+
+    const { data: topNotes } = await supabase
+      .from('notes')
+      .select('*')
+      .order('likes', { ascending: false })
+      .limit(5)
+
+    return NextResponse.json({ 
+      status: 'ok',
+      data: {
+        account,
+        latestStats,
+        topNotes
+      },
+      config: {
+        ONEAPI_KEY: process.env.ONEAPI_KEY ? '已配置' : '未配置',
+        XHS_USER_ID: process.env.XHS_USER_ID || '未配置'
+      }
+    })
+  } catch (e) {
+    return NextResponse.json({ status: 'ok', data: null })
+  }
 }
