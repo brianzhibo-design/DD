@@ -220,49 +220,48 @@ export async function getCats(): Promise<CatRecord[]> {
 export async function updateCat(idOrName: string, updates: Partial<CatRecord>): Promise<CatRecord | null> {
   console.log('[DB] updateCat - updating:', idOrName, updates)
   
-  // 先尝试通过名字查找（更可靠）
+  // 使用名字来查找和更新
   const catName = updates.name || idOrName
   
-  // 使用 upsert：如果存在则更新，不存在则插入
-  const { data, error } = await supabase
+  // 移除可能无效的 id 字段（本地 id 是数字，Supabase 需要 UUID）
+  const { id, ...cleanUpdates } = updates as any
+  
+  // 先尝试通过名字更新
+  const { data: existingData, error: updateError } = await supabase
     .from('cats')
-    .upsert(
-      { 
-        name: catName,
-        ...updates, 
-        updated_at: new Date().toISOString() 
-      },
-      { 
-        onConflict: 'name',  // 通过名字匹配
-        ignoreDuplicates: false 
-      }
-    )
+    .update({ 
+      ...cleanUpdates, 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('name', catName)
     .select()
     .single()
   
-  if (error) {
-    console.error('[DB] updateCat error:', error)
-    // 如果 upsert 失败，尝试直接 insert
-    const { data: insertData, error: insertError } = await supabase
-      .from('cats')
-      .insert({ 
-        name: catName,
-        ...updates, 
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString() 
-      })
-      .select()
-      .single()
-    
-    if (insertError) {
-      console.error('[DB] updateCat insert fallback error:', insertError)
-      return null
-    }
-    return insertData
+  if (!updateError && existingData) {
+    console.log('[DB] updateCat - updated existing:', existingData)
+    return existingData
   }
   
-  console.log('[DB] updateCat - success:', data)
-  return data
+  // 如果不存在，插入新记录
+  console.log('[DB] updateCat - cat not found, inserting new:', catName)
+  const { data: insertData, error: insertError } = await supabase
+    .from('cats')
+    .insert({ 
+      name: catName,
+      ...cleanUpdates, 
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString() 
+    })
+    .select()
+    .single()
+  
+  if (insertError) {
+    console.error('[DB] updateCat insert error:', insertError)
+    return null
+  }
+  
+  console.log('[DB] updateCat - inserted new:', insertData)
+  return insertData
 }
 
 export async function incrementCatAppearance(catName: string): Promise<void> {
