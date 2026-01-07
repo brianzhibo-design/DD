@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { 
   Users, Heart, Bookmark, MessageCircle, FileText, RefreshCw, 
-  ArrowUpRight, Sparkles, MapPin, Clock, Share2
+  ArrowUpRight, Sparkles, MapPin, Clock, Share2, Settings
 } from 'lucide-react'
+import Link from 'next/link'
 
 interface AccountInfo {
   nickname: string
@@ -129,25 +130,44 @@ export default function HomePage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
-      {/* 头部：账号信息 + 同步按钮 */}
+      {/* 移动端顶部栏 */}
+      <div className="flex items-center justify-between mb-4 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#2D4B3E] flex items-center justify-center shadow-lg shadow-[#2D4B3E]/20">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-[#2D4B3E] font-serif">小离岛岛</h1>
+            <p className="text-[10px] text-[#6B7A74]">内容运营系统</p>
+          </div>
+        </div>
+        <Link 
+          href="/settings"
+          className="p-2.5 rounded-xl text-[#6B7A74] hover:text-[#2D4B3E] hover:bg-[#F4F6F0] transition-all"
+        >
+          <Settings size={22} />
+        </Link>
+      </div>
+
+      {/* 账号信息 + 同步按钮 */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
           {account?.avatar ? (
             <img 
               src={account.avatar} 
               alt={account.nickname}
-              className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-4 border-white shadow-lg"
+              className="w-14 h-14 md:w-20 md:h-20 rounded-full object-cover border-2 border-white shadow-lg"
             />
           ) : (
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#2D4B3E] flex items-center justify-center border-4 border-white shadow-lg">
-              <Sparkles className="w-8 h-8 text-white" />
+            <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center border-2 border-white shadow-lg">
+              <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
             </div>
           )}
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-[#1A2421] font-serif">
+            <h2 className="text-lg md:text-2xl font-bold text-[#1A2421] font-serif">
               {account?.nickname || '小红书账号'}
-            </h1>
-            <p className="text-sm text-[#6B7A74] flex items-center gap-2 mt-1">
+            </h2>
+            <p className="text-xs md:text-sm text-[#6B7A74] flex items-center gap-2 mt-0.5">
               <span>小红书号: {account?.red_id || '-'}</span>
               {account?.ip_location && (
                 <span className="flex items-center gap-1 text-[#9BA8A3]">
@@ -156,17 +176,12 @@ export default function HomePage() {
                 </span>
               )}
             </p>
-            {account?.description && (
-              <p className="text-xs text-[#9BA8A3] mt-1 line-clamp-1 max-w-md">
-                {account.description}
-              </p>
-            )}
           </div>
         </div>
         
         <div className="flex items-center gap-3">
           {account?.updated_at && (
-            <span className="text-xs text-[#9BA8A3] flex items-center gap-1">
+            <span className="text-xs text-[#9BA8A3] flex items-center gap-1 hidden md:flex">
               <Clock className="w-3 h-3" />
               {formatTime(account.updated_at)}
             </span>
@@ -174,7 +189,7 @@ export default function HomePage() {
           <button
             onClick={syncData}
             disabled={syncing}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#2D4B3E] text-white rounded-full hover:bg-[#3D6654] disabled:opacity-50 transition-all text-sm font-bold shadow-lg shadow-[#2D4B3E]/20"
+            className="flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-[#2D4B3E] text-white rounded-full hover:bg-[#3D6654] disabled:opacity-50 transition-all text-sm font-bold shadow-lg shadow-[#2D4B3E]/20"
           >
             <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? '同步中...' : '同步小红书'}

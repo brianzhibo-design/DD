@@ -17,8 +17,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return <>{children}</>;
   }
 
-  // AI 助手页面使用自己的 header
-  const showMobileHeader = pathname !== '/assistant';
+  // 首页和AI助手页面使用自己的 header
+  const showMobileHeader = pathname !== '/assistant' && pathname !== '/';
 
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
