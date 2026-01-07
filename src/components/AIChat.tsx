@@ -13,10 +13,10 @@ interface Message {
 
 const quickActions = [
   { icon: BarChart3, label: '数据复盘', prompt: '帮我分析当前的运营数据，有什么需要改进的地方？给出具体建议。' },
-  { icon: Lightbulb, label: '穿搭选题', prompt: '帮我生成5个御姐风穿搭OOTD的选题，要有吸引力的标题和简单的内容大纲。' },
+  { icon: Lightbulb, label: '内容选题', prompt: '帮我生成5个生活方式内容的选题，要有吸引力的标题和简单的内容大纲。' },
   { icon: AlertTriangle, label: '风险检查', prompt: '检查当前粉丝画像数据，分析女性粉丝占比是否达到80%以上，有什么风险需要注意？' },
-  { icon: ShoppingBag, label: '选品建议', prompt: '根据我的账号定位（御姐风穿搭×氛围感美妆），推荐本周可以带货的服饰、配饰或美妆产品。' },
-  { icon: Cat, label: '猫咪加分', prompt: '我想让猫咪偶尔出镜增加记忆点，帮我策划1-2个猫咪+穿搭/生活的内容创意。' },
+  { icon: ShoppingBag, label: '选品建议', prompt: '根据我的账号定位，推荐本周可以带货的生活好物产品。' },
+  { icon: Cat, label: '猫咪加分', prompt: '我想让猫咪偶尔出镜增加记忆点，帮我策划1-2个猫咪+生活的内容创意。' },
 ];
 
 export default function AIChat() {

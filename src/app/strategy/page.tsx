@@ -142,8 +142,8 @@ const weeklyChecklist = [
 
 // 内容配比
 const contentMix = [
-  { type: '穿搭OOTD', percent: 40, purpose: '涨粉+变现', color: 'bg-rose-500' },
-  { type: '氛围感妆容', percent: 25, purpose: '涨粉+变现', color: 'bg-pink-500' },
+  { type: '生活方式', percent: 40, purpose: '涨粉+变现', color: 'bg-rose-500' },
+  { type: '好物分享', percent: 25, purpose: '涨粉+变现', color: 'bg-pink-500' },
   { type: '好物种草', percent: 25, purpose: '核心变现', color: 'bg-amber-500' },
   { type: '日常生活', percent: 10, purpose: '人设+记忆点', color: 'bg-purple-500' },
 ];
@@ -167,7 +167,7 @@ export default function StrategyPage() {
           <Target size={24} className="text-rose-500" />
           战略规划中心
         </h1>
-        <p className="text-gray-500">小红书带货业务完整战略规划 · 从0到50000粉的成长路径</p>
+        <p className="text-gray-500">小红书业务完整战略规划 · 从0到50000粉的成长路径</p>
       </div>
 
       {/* Core Positioning Banner */}
@@ -176,8 +176,8 @@ export default function StrategyPage() {
           <Sparkles size={20} />
           <span className="font-medium">核心定位</span>
         </div>
-        <h2 className="text-2xl font-bold mb-2">御姐风穿搭 × 氛围感美妆 × 精致生活</h2>
-        <p className="text-white/80 text-sm">差异化竞争策略：小红书甜妹多，御姐相对稀缺</p>
+        <h2 className="text-2xl font-bold mb-2">内容创作 × 生活方式 × 精致分享</h2>
+        <p className="text-white/80 text-sm">差异化竞争策略：打造独特个人风格</p>
         <div className="flex flex-wrap gap-3 mt-4">
           <span className="px-3 py-1.5 bg-white/20 rounded-full text-sm">每天1-2小时</span>
           <span className="px-3 py-1.5 bg-white/20 rounded-full text-sm">前期少投放</span>
@@ -470,10 +470,10 @@ export default function StrategyPage() {
                   预防措施（日常执行）
                 </h4>
                 <ul className="text-sm text-gray-600 space-y-1 ml-5 list-disc">
-                  <li>穿搭/美妆/好物为主，弱化纯颜值展示</li>
+                  <li>内容/好物分享为主，弱化纯颜值展示</li>
                   <li>闺蜜分享式文案，切入女性痛点</li>
                   <li>优先回复女性用户，引导女性话题</li>
-                  <li>选择性导流，只从穿搭类内容引流</li>
+                  <li>选择性导流，从优质内容引流</li>
                 </ul>
               </div>
               
@@ -483,7 +483,7 @@ export default function StrategyPage() {
                   应急措施（触发警戒线时）
                 </h4>
                 <ul className="text-sm text-gray-600 space-y-1 ml-5 list-disc">
-                  <li>提高穿搭教程、妆容攻略比例</li>
+                  <li>提高教程、攻略类内容比例</li>
                   <li>降低纯露脸、纯展示内容</li>
                   <li>选择女性活跃时段发布</li>
                   <li>暂停从抖音向小红书导流</li>
@@ -620,7 +620,7 @@ export default function StrategyPage() {
                 <div className="flex justify-center gap-0.5">
                   {[1,2,3].map(i => <Star key={i} size={12} className="text-amber-400 fill-amber-400" />)}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">通勤穿搭</p>
+                <p className="text-xs text-gray-400 mt-1">日常分享</p>
               </div>
               <div className="p-3 bg-gray-50 rounded-xl text-center">
                 <p className="text-xs text-gray-500 mb-1">12:00-14:00</p>
@@ -634,7 +634,7 @@ export default function StrategyPage() {
                 <div className="flex justify-center gap-0.5">
                   {[1,2,3,4].map(i => <Star key={i} size={12} className="text-amber-400 fill-amber-400" />)}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">下班穿搭</p>
+                <p className="text-xs text-gray-400 mt-1">生活记录</p>
               </div>
               <div className="p-3 bg-pink-50 rounded-xl text-center border-2 border-pink-200">
                 <p className="text-xs text-pink-600 mb-1 font-medium">20:00-22:00</p>
@@ -672,21 +672,21 @@ export default function StrategyPage() {
                   <div className="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 text-xs font-bold">2</div>
                   <span className="font-medium text-gray-700">研究对标账号</span>
                 </div>
-                <p className="text-sm text-gray-500 ml-8">分析5-10个御姐风穿搭账号</p>
+                <p className="text-sm text-gray-500 ml-8">分析5-10个同类型账号</p>
               </div>
               <div className="p-3 bg-white rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 text-xs font-bold">3</div>
                   <span className="font-medium text-gray-700">确定首批选题</span>
                 </div>
-                <p className="text-sm text-gray-500 ml-8">列出5个穿搭/妆容选题</p>
+                <p className="text-sm text-gray-500 ml-8">列出5个内容选题</p>
               </div>
               <div className="p-3 bg-white rounded-xl">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 text-xs font-bold">4</div>
                   <span className="font-medium text-gray-700">拍摄首批素材</span>
                 </div>
-                <p className="text-sm text-gray-500 ml-8">3-5套穿搭，高清多角度</p>
+                <p className="text-sm text-gray-500 ml-8">3-5条内容素材，高清多角度</p>
               </div>
             </div>
           </div>

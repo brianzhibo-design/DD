@@ -143,7 +143,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...`}
       {/* About */}
       <div className="mt-8 text-center text-sm text-gray-400">
         <p>小离岛岛 · 小红书运营系统</p>
-        <p className="mt-1">御姐风穿搭 × 氛围感美妆 × 精致生活</p>
+        <p className="mt-1">内容创作 × 生活方式 × 精致分享</p>
         <p className="mt-2">Powered by Claude Sonnet 4.5 + Supabase</p>
       </div>
     </div>

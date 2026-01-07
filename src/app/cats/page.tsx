@@ -138,7 +138,7 @@ export default function CatsPage() {
         </h3>
         <ul className="text-sm text-purple-700 space-y-2">
           <li>• 猫咪是加分项，偶尔出镜增加记忆点，不要喧宾夺主</li>
-          <li>• 可以拍摄"居家穿搭+猫咪"、"氛围感生活vlog"等内容</li>
+          <li>• 可以拍摄"居家日常+猫咪"、"生活vlog"等内容</li>
           <li>• 熊崽是缅因猫体型大，可以做对比内容亮点</li>
           <li>• 达令是唯一母猫，可以突出"大姐"人设</li>
         </ul>

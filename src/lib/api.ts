@@ -132,7 +132,7 @@ export async function analyzeGeneral(text: string): Promise<AnalyzeResponse> {
 // ============ 话题推荐 ============
 
 export async function getTopicSuggestions(
-  category: string = '穿搭', 
+  category: string = '生活方式', 
   count: number = 5,
   context?: string
 ): Promise<Topic[]> {

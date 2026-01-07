@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
 const SYSTEM_PROMPT = `你是小红书内容策划专家，为"小离岛岛"账号提供选题。
-账号定位：御姐风穿搭 × 氛围感美妆 × 精致生活
+账号定位：内容创作 × 生活方式 × 精致分享
 目标用户：25-35岁女性
 
 生成5个爆款选题，直接返回JSON数组，不要任何其他文字。`
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { category = '穿搭', season = '通用' } = body
+    const { category = '生活方式', season = '通用' } = body
 
     console.log('[Topics API] Request:', { category, season })
 

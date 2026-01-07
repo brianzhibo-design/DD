@@ -97,8 +97,8 @@ function buildContextPrompt(data: { notes: any[], weeklyStats: any[], cats: any[
 
 const BASE_SYSTEM_PROMPT = `你是一位专业的小红书运营专家，专门为"小离岛岛"账号提供运营建议。
 
-账号定位：御姐风穿搭 × 氛围感美妆 × 精致生活
-目标用户：25-35岁女性，追求高级感、质感穿搭
+账号定位：内容创作 × 生活方式 × 精致分享
+目标用户：25-35岁女性，追求品质生活
 现有资产：抖音4.5万粉丝，92.8万获赞，正在拓展小红书
 
 你的职责：
@@ -110,7 +110,7 @@ const BASE_SYSTEM_PROMPT = `你是一位专业的小红书运营专家，专门�
 回答要求：
 - 基于实际数据给出建议，不要空泛
 - 简洁实用，给出具体可执行的建议
-- 符合御姐风格定位`
+- 符合账号风格定位`
 
 export async function POST(request: NextRequest) {
   try {

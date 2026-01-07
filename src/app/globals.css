@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ============================================
-   小离岛岛 · 御姐风运营系统
+   小离岛岛 · 内容运营系统
    Design: 微信风格 + 苹方字体 + Soft UI
    Optimized by UI UX Pro Max
    ============================================ */
@@ -38,7 +38,7 @@
   --leading-relaxed: 1.625;
   --leading-loose: 2;
   
-  /* ===== 主色调 - 御姐玫粉系 ===== */
+  /* ===== 主色调 - 玫粉系 ===== */
   --primary-50: #FDF2F8;
   --primary-100: #FCE7F3;
   --primary-200: #FBCFE8;

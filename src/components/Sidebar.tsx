@@ -60,7 +60,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               </h1>
               <p className="text-[11px] text-gray-400 flex items-center gap-1">
                 <Sparkles size={10} className="text-pink-400" />
-                御姐风运营系统
+                内容运营系统
               </p>
             </div>
           </div>

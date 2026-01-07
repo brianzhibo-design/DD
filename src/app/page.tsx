@@ -31,21 +31,21 @@ export default function Home() {
 
   const quickLinks = [
     { href: '/analytics', label: '数据分析', icon: BarChart3, gradient: 'from-rose-400 via-pink-500 to-rose-600', desc: '追踪运营数据趋势' },
-    { href: '/topics', label: '话题推荐', icon: Lightbulb, gradient: 'from-amber-400 via-orange-500 to-amber-600', desc: '穿搭妆容选题生成' },
+    { href: '/topics', label: '话题推荐', icon: Lightbulb, gradient: 'from-amber-400 via-orange-500 to-amber-600', desc: '内容选题生成' },
     { href: '/assistant', label: 'AI助手', icon: Bot, gradient: 'from-purple-400 via-fuchsia-500 to-purple-600', desc: '智能运营建议' },
     { href: '/cats', label: '猫咪档案', icon: Cat, gradient: 'from-blue-400 via-indigo-500 to-blue-600', desc: '6只猫的信息管理' },
   ];
 
   const contentTypes = [
-    { label: '穿搭OOTD', icon: Shirt, percent: 40, color: 'bg-gradient-to-r from-rose-400 to-rose-500' },
-    { label: '氛围妆容', icon: Palette, percent: 25, color: 'bg-gradient-to-r from-pink-400 to-pink-500' },
+    { label: '生活方式', icon: Shirt, percent: 40, color: 'bg-gradient-to-r from-rose-400 to-rose-500' },
+    { label: '好物分享', icon: Palette, percent: 25, color: 'bg-gradient-to-r from-pink-400 to-pink-500' },
     { label: '好物种草', icon: Gift, percent: 20, color: 'bg-gradient-to-r from-amber-400 to-amber-500' },
     { label: '生活氛围', icon: Cat, percent: 15, color: 'bg-gradient-to-r from-purple-400 to-purple-500' },
   ];
 
   const todos = [
-    { text: '拍摄2-3套穿搭OOTD', color: 'rose', checked: false },
-    { text: '录制1个氛围感妆容', color: 'pink', checked: false },
+    { text: '拍摄2-3条内容素材', color: 'rose', checked: false },
+    { text: '录制1个精品视频', color: 'pink', checked: false },
     { text: '整理好物分享素材', color: 'amber', checked: false },
     { text: '录入本周运营数据', color: 'blue', checked: false },
   ];
@@ -76,13 +76,13 @@ export default function Home() {
             <Palmtree size={28} className="text-white/90 md:w-9 md:h-9" />
           </h1>
           <p className="text-white/90 text-lg font-medium">
-            御姐风穿搭 × 氛围感美妆 × 精致生活
+            内容创作 × 生活方式 × 精致分享
           </p>
           
           <div className="flex flex-wrap gap-2 mt-6">
             {[
-              { icon: Shirt, label: '穿搭OOTD' },
-              { icon: Palette, label: '氛围妆容' },
+              { icon: Shirt, label: '生活方式' },
+              { icon: Palette, label: '好物分享' },
               { icon: Gift, label: '好物种草' },
               { icon: Cat, label: '6只猫' },
             ].map((tag, i) => (
@@ -191,7 +191,7 @@ export default function Home() {
           <div className="mt-5 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-400 flex items-center gap-1.5">
               <Sparkles size={12} className="text-pink-400" />
-              御姐风穿搭是主线，猫咪偶尔出镜增加记忆点
+              内容创作是主线，猫咪偶尔出镜增加记忆点
             </p>
           </div>
         </div>

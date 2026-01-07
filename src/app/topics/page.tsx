@@ -13,8 +13,8 @@ interface Topic {
 }
 
 const categories = [
-  { value: '穿搭', label: '穿搭OOTD' },
-  { value: '妆容', label: '氛围感妆容' },
+  { value: '生活方式', label: '生活方式' },
+  { value: '好物分享', label: '好物分享' },
   { value: '好物', label: '好物种草' },
   { value: '生活', label: '生活日常' },
 ];
@@ -41,7 +41,7 @@ export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [category, setCategory] = useState('穿搭');
+  const [category, setCategory] = useState('生活方式');
   const [season, setSeason] = useState('通用');
   const [error, setError] = useState<string | null>(null);
   
