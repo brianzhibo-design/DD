@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { category = '全部' } = body
+    const { category = '全部', customPrompt } = body
 
-    console.log('[Topics API] Request:', { category })
+    console.log('[Topics API] Request:', { category, customPrompt: customPrompt?.slice(0, 50) })
 
     const today = new Date().toLocaleDateString('zh-CN', { 
       year: 'numeric', month: 'long', day: 'numeric' 
@@ -52,9 +52,16 @@ export async function POST(request: NextRequest) {
   "marketInsight": "当前市场洞察（50字内）"
 }`
 
-    const userPrompt = category && category !== '全部'
-      ? `推荐5个「${category}」类选题`
-      : '推荐5个适合账号的热门选题，覆盖不同类别'
+    // 根据用户输入生成提示
+    let userPrompt: string
+    if (customPrompt && customPrompt.trim()) {
+      userPrompt = `根据以下需求推荐5个选题：「${customPrompt.trim()}」
+请结合账号定位和用户需求，生成具体可执行的爆款选题。`
+    } else if (category && category !== '全部') {
+      userPrompt = `推荐5个「${category}」类选题`
+    } else {
+      userPrompt = '推荐5个适合账号的热门选题，覆盖不同类别'
+    }
 
     const anthropic = new Anthropic({ apiKey })
 

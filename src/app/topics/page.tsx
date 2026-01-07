@@ -4,17 +4,16 @@ import { useState, useEffect } from 'react';
 import { 
   Lightbulb, 
   TrendingUp, 
-  Star, 
   Wand2, 
   ChevronDown, 
-  Loader2,
   Sparkles,
   Copy,
   Check,
   Flame,
   RefreshCw,
   Clock,
-  Users
+  Search,
+  Send
 } from 'lucide-react';
 
 interface Topic {
@@ -37,21 +36,25 @@ export default function TopicsPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [marketInsight, setMarketInsight] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('全部');
+  const [customInput, setCustomInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const generateTopics = async (category?: string) => {
+  const generateTopics = async (category?: string, custom?: string) => {
     setLoading(true);
     setError('');
     setTopics([]);
     
-    const targetCategory = category ?? selectedCategory;
+    const targetCategory = custom || category || selectedCategory;
     
     try {
       const response = await fetch('/api/topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: targetCategory })
+        body: JSON.stringify({ 
+          category: targetCategory,
+          customPrompt: custom || undefined
+        })
       });
 
       const result = await response.json();
@@ -74,7 +77,21 @@ export default function TopicsPage() {
 
   const handleCategoryChange = (cat: string) => {
     setSelectedCategory(cat);
+    setCustomInput('');
     generateTopics(cat);
+  };
+
+  const handleCustomSearch = () => {
+    if (!customInput.trim()) return;
+    setSelectedCategory('');
+    generateTopics(undefined, customInput.trim());
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleCustomSearch();
+    }
   };
 
   // 初始加载
@@ -87,17 +104,45 @@ export default function TopicsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#1A2421]">选题推荐</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold text-[#1A2421]">选题推荐</h1>
           <p className="text-[#6B7A74] text-sm mt-1">基于小红书热点趋势和账号定位的AI智能推荐</p>
         </div>
         <button
           onClick={() => generateTopics()}
           disabled={loading}
-          className="inline-flex items-center gap-2 bg-[#2D4B3E] hover:bg-[#3D6654] text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-[#2D4B3E]/20 disabled:opacity-50 transition-all active:scale-[0.98]"
+          className="inline-flex items-center gap-2 bg-[#2D4B3E] hover:bg-[#3D6654] text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-[#2D4B3E]/20 disabled:opacity-50 transition-all active:scale-[0.98]"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           {loading ? '生成中...' : '换一批'}
         </button>
+      </div>
+
+      {/* 自定义输入框 */}
+      <div className="bg-white rounded-2xl border border-[#2D4B3E]/10 p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9BA8A3]" />
+            <input
+              type="text"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="输入你想要的选题方向，如：春季穿搭、职场通勤、小户型收纳..."
+              className="w-full pl-12 pr-4 py-3.5 bg-[#FDFBF7] border border-[#2D4B3E]/5 rounded-xl text-[#1A2421] placeholder-[#9BA8A3] focus:outline-none focus:ring-2 focus:ring-[#2D4B3E]/10 focus:border-[#2D4B3E]/20 transition-all"
+            />
+          </div>
+          <button
+            onClick={handleCustomSearch}
+            disabled={loading || !customInput.trim()}
+            className="flex items-center gap-2 bg-[#C5A267] hover:bg-[#B89355] text-white font-semibold py-3.5 px-5 rounded-xl disabled:opacity-50 transition-all active:scale-[0.98] shrink-0"
+          >
+            <Send className="w-4 h-4" />
+            <span className="hidden sm:inline">生成</span>
+          </button>
+        </div>
+        <p className="text-xs text-[#9BA8A3] mt-2 ml-1">
+          支持自定义输入，如产品名称、风格描述、目标人群等
+        </p>
       </div>
 
       {/* 市场洞察 */}
@@ -106,7 +151,7 @@ export default function TopicsPage() {
           <div className="flex items-start gap-3">
             <TrendingUp className="w-5 h-5 text-[#C5A267] flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-bold text-[#2D4B3E] mb-1">市场洞察</h3>
+              <h3 className="font-semibold text-[#2D4B3E] mb-1">市场洞察</h3>
               <p className="text-sm text-[#6B7A74]">{marketInsight}</p>
             </div>
           </div>
@@ -120,7 +165,7 @@ export default function TopicsPage() {
             key={cat}
             onClick={() => handleCategoryChange(cat)}
             disabled={loading}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
               selectedCategory === cat 
                 ? 'bg-[#2D4B3E] text-white shadow-lg shadow-[#2D4B3E]/20' 
                 : 'bg-white text-[#6B7A74] border border-[#2D4B3E]/10 hover:border-[#2D4B3E]/30'
@@ -163,9 +208,9 @@ export default function TopicsPage() {
           <div className="inline-block p-5 bg-[#F4F6F0] rounded-2xl text-[#9BA8A3] mb-5">
             <Wand2 size={44} />
           </div>
-          <h3 className="text-xl font-bold text-[#2D4B3E] mb-2 font-serif">等待你的灵感召唤</h3>
+          <h3 className="text-xl font-semibold text-[#2D4B3E] mb-2">等待你的灵感召唤</h3>
           <p className="text-[#6B7A74] max-w-sm mx-auto">
-            点击上方按钮，AI将为你生成精准匹配的爆款选题
+            输入你想要的选题方向，或点击上方分类，AI将为你生成精准匹配的爆款选题
           </p>
         </div>
       )}
@@ -198,13 +243,13 @@ function TopicCard({ topic, rank }: { topic: Topic; rank: number }) {
     <div className="bg-white rounded-[2rem] border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(45,75,62,0.1)] transition-all p-5 md:p-6">
       {/* 头部 */}
       <div className="flex items-start gap-3 mb-4">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-semibold text-sm ${
           rank <= 3 ? 'bg-[#2D4B3E] text-white' : 'bg-[#F4F6F0] text-[#6B7A74]'
         }`}>
           {rank}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-[#1A2421] mb-1.5 line-clamp-2 font-serif">{topic.title}</h3>
+          <h3 className="font-semibold text-[#1A2421] mb-1.5 line-clamp-2">{topic.title}</h3>
           <div className="flex items-center gap-2 text-xs text-[#6B7A74] flex-wrap">
             <span className="px-2 py-0.5 bg-[#F4F6F0] rounded-md font-medium">{topic.category}</span>
             <span className={`flex items-center gap-1 ${heatColor}`}>
@@ -225,16 +270,16 @@ function TopicCard({ topic, rank }: { topic: Topic; rank: number }) {
       {/* 数据指标 */}
       <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-[#FDFBF7] rounded-xl text-center">
         <div>
-          <div className="text-[#6B7A74] text-[10px] font-bold uppercase tracking-wider">预估曝光</div>
-          <div className="font-bold text-[#2D4B3E] text-sm mt-0.5">{topic.estimatedViews || '-'}</div>
+          <div className="text-[#6B7A74] text-[10px] font-semibold uppercase tracking-wider">预估曝光</div>
+          <div className="font-semibold text-[#2D4B3E] text-sm mt-0.5">{topic.estimatedViews || '-'}</div>
         </div>
         <div className="border-x border-[#2D4B3E]/5">
-          <div className="text-[#6B7A74] text-[10px] font-bold uppercase tracking-wider">互动率</div>
-          <div className="font-bold text-[#2D4B3E] text-sm mt-0.5">{topic.engagement || '-'}</div>
+          <div className="text-[#6B7A74] text-[10px] font-semibold uppercase tracking-wider">互动率</div>
+          <div className="font-semibold text-[#2D4B3E] text-sm mt-0.5">{topic.engagement || '-'}</div>
         </div>
         <div>
-          <div className="text-[#6B7A74] text-[10px] font-bold uppercase tracking-wider">竞争度</div>
-          <div className="font-bold text-[#2D4B3E] text-sm mt-0.5">{topic.competitorCount || '-'}</div>
+          <div className="text-[#6B7A74] text-[10px] font-semibold uppercase tracking-wider">竞争度</div>
+          <div className="font-semibold text-[#2D4B3E] text-sm mt-0.5">{topic.competitorCount || '-'}</div>
         </div>
       </div>
 
