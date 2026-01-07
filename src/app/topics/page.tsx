@@ -1,270 +1,184 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Loader2, Copy, Check, Lightbulb, TrendingUp, Star, Clock } from 'lucide-react';
+import { 
+  Lightbulb, 
+  TrendingUp, 
+  Star, 
+  Wand2, 
+  ChevronRight, 
+  Loader2,
+  Sparkles,
+  Copy,
+  Check,
+  ArrowUpRight
+} from 'lucide-react';
+import { getTopicSuggestions, Topic } from '@/lib/api';
 
-interface Topic {
-  title: string;
-  tags: string[];
-  difficulty: '简单' | '中等' | '复杂';
-  potential: '高' | '中' | '低';
-  reason: string;
-  outline: string[];
-}
-
-const categories = [
-  { value: '生活方式', label: '生活方式' },
-  { value: '好物分享', label: '好物分享' },
-  { value: '好物', label: '好物种草' },
-  { value: '生活', label: '生活日常' },
-];
-
-const seasons = [
-  { value: '通用', label: '通用' },
-  { value: '春夏', label: '春夏' },
-  { value: '秋冬', label: '秋冬' },
-];
-
-const difficultyConfig = {
-  '简单': { color: 'bg-[#4A6741]/10 text-[#4A6741]' },
-  '中等': { color: 'bg-[#B8860B]/10 text-[#B8860B]' },
-  '复杂': { color: 'bg-[#C75050]/10 text-[#C75050]' },
-};
-
-const potentialConfig = {
-  '高': { color: 'bg-[#4A6741]/10 text-[#4A6741]', stars: 3 },
-  '中': { color: 'bg-[#B8860B]/10 text-[#B8860B]', stars: 2 },
-  '低': { color: 'bg-[#7D8A80]/10 text-[#7D8A80]', stars: 1 },
-};
+const categories = ['生活方式', '好物分享', '萌宠', '美食', '家居', '旅行'];
 
 export default function TopicsPage() {
+  const [selectedCategory, setSelectedCategory] = useState('生活方式');
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [category, setCategory] = useState('生活方式');
-  const [season, setSeason] = useState('通用');
-  const [error, setError] = useState<string | null>(null);
-  
+  const [loading, setLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
   const generateTopics = async () => {
-    setIsGenerating(true);
-    setError(null);
+    setLoading(true);
     setTopics([]);
-    
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 55000);
-      
-      const res = await fetch('/api/topics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, season }),
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        setError(errorData.error || `请求失败 (${res.status})`);
-        return;
-      }
-      
-      const data = await res.json();
-      
-      if (data.error && !data.topics?.length) {
-        setError(data.error);
-        return;
-      }
-      
-      if (data.topics && Array.isArray(data.topics) && data.topics.length > 0) {
-        setTopics(data.topics);
-      } else if (data.raw) {
-        setError('AI返回格式异常，请重试');
+      const result = await getTopicSuggestions(selectedCategory);
+      if (result && result.length > 0) {
+        setTopics(result);
       } else {
-        setError('未能生成选题，请重试');
+        alert('未能获取推荐话题，请稍后再试');
       }
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        setError('请求超时，AI正在思考中，请稍后重试');
-      } else {
-        setError('网络错误，请检查连接后重试');
-      }
-    } finally {
-      setIsGenerating(false);
+    } catch (error) {
+      console.error('获取话题失败:', error);
+      alert('获取话题失败，请检查网络连接');
     }
+    setLoading(false);
   };
-  
+
   const copyTitle = (title: string, index: number) => {
     navigator.clipboard.writeText(title);
-    setCopiedId(index);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
   };
-  
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#2D3A30] mb-2 flex items-center gap-2">
-          <Lightbulb size={24} className="text-[#4A6741]" />
-          AI话题推荐
-        </h1>
-        <p className="text-[#7D8A80]">基于账号定位，智能生成爆款选题</p>
+      <div className="mb-10">
+        <h1 className="text-3xl font-serif text-[#2D4B3E] mb-2">话题推荐</h1>
+        <p className="text-[#6B7A74]">AI驱动的爆款选题生成器，精准匹配流量趋势</p>
       </div>
-      
-      {/* Controls */}
-      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-[#2D3A30] mb-2">
-              内容类型
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] bg-white text-[#2D3A30]"
+
+      {/* Category Selection */}
+      <div className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+        <div className="flex items-center gap-2 mb-6">
+          <Lightbulb className="w-5 h-5 text-[#2D4B3E]" />
+          <h2 className="font-bold text-[#2D4B3E] font-serif">选择内容赛道</h2>
+        </div>
+        
+        <div className="flex flex-wrap gap-3 mb-8">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-5 py-3 rounded-xl font-bold text-sm transition-all ${
+                selectedCategory === cat 
+                  ? 'bg-[#2D4B3E] text-white shadow-lg shadow-[#2D4B3E]/20' 
+                  : 'bg-[#F4F6F0] text-[#6B7A74] hover:text-[#2D4B3E] hover:bg-[#E8EDE5]'
+              }`}
             >
-              {categories.map(cat => (
-                <option key={cat.value} value={cat.value}>{cat.label}</option>
-              ))}
-            </select>
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={generateTopics}
+          disabled={loading}
+          className="w-full bg-[#2D4B3E] hover:bg-[#3D6654] text-white font-bold py-4 px-8 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#2D4B3E]/20 disabled:opacity-50 active:scale-[0.98]"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              AI正在为你挖掘爆款话题...
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-5 h-5" />
+              生成爆款选题
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Results */}
+      {topics.length > 0 && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-[#2D4B3E] font-serif flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#C5A267]" />
+              为你推荐 {topics.length} 个选题
+            </h2>
+            <span className="text-xs text-[#6B7A74] font-bold uppercase tracking-wider bg-[#F4F6F0] px-3 py-1.5 rounded-lg">
+              {selectedCategory}
+            </span>
           </div>
           
-          <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-[#2D3A30] mb-2">
-              季节
-            </label>
-            <select
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] bg-white text-[#2D3A30]"
+          {topics.map((topic, index) => (
+            <div 
+              key={index} 
+              className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(45,75,62,0.1)] transition-all hover:translate-y-[-4px] group"
             >
-              {seasons.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </div>
-          
-          <button
-            onClick={generateTopics}
-            disabled={isGenerating}
-            className="flex items-center gap-2 px-6 py-2.5 bg-[#4A6741] text-white rounded-lg hover:bg-[#3A5233] transition-colors disabled:opacity-50 font-medium shadow-lg"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 size={20} className="animate-spin" />
-                生成中...
-              </>
-            ) : (
-              <>
-                <Sparkles size={20} />
-                生成选题
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-      
-      {/* Error */}
-      {error && (
-        <div className="bg-[#C75050]/10 border border-[#C75050]/20 text-[#C75050] px-4 py-3 rounded-lg mb-6">
-          {error}
-        </div>
-      )}
-      
-      {/* Topics Grid */}
-      {topics.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {topics.map((topic, index) => {
-            const difficulty = difficultyConfig[topic.difficulty] || difficultyConfig['中等'];
-            const potential = potentialConfig[topic.potential] || potentialConfig['中'];
-            
-            return (
-              <div 
-                key={index}
-                className="bg-white rounded-xl p-5 border border-[#E2E8D5] hover:shadow-md transition-shadow"
-              >
-                {/* Badges */}
-                <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${difficulty.color}`}>
-                    <Clock size={12} />
-                    {topic.difficulty}
-                  </span>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${potential.color}`}>
-                    <TrendingUp size={12} />
-                    爆款潜力: {topic.potential}
-                  </span>
-                  <div className="flex items-center gap-0.5 ml-auto">
-                    {Array.from({ length: potential.stars }).map((_, i) => (
-                      <Star key={i} size={14} className="text-[#B8860B] fill-[#B8860B]" />
-                    ))}
-                    {Array.from({ length: 3 - potential.stars }).map((_, i) => (
-                      <Star key={i} size={14} className="text-[#E2E8D5]" />
-                    ))}
-                  </div>
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-[#2D4B3E] mb-2 group-hover:text-[#426B5A] transition-colors font-serif">
+                    {topic.title}
+                  </h3>
+                  <p className="text-[#6B7A74] text-sm leading-relaxed">{topic.reason}</p>
                 </div>
-                
-                {/* Title */}
-                <h3 className="font-bold text-[#2D3A30] text-lg mb-3 leading-snug">
-                  {topic.title}
-                </h3>
-                
-                {/* Reason */}
-                <p className="text-sm text-[#7D8A80] mb-3 bg-[#F4F6F0] rounded-lg p-3 border border-[#E2E8D5]">
-                  {topic.reason}
-                </p>
-                
-                {/* Outline */}
-                <div className="bg-[#F4F6F0] rounded-lg p-3 mb-3">
-                  <p className="text-xs text-[#7D8A80] mb-2 font-medium">内容大纲</p>
-                  <ul className="text-sm text-[#2D3A30] space-y-1">
-                    {(Array.isArray(topic.outline) ? topic.outline : [topic.outline]).map((item, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-[#4A6741] mt-0.5">•</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {topic.tags.map(tag => (
-                    <span key={tag} className="text-xs text-[#7D8A80]">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-                
-                {/* Copy Button */}
                 <button
                   onClick={() => copyTitle(topic.title, index)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#4A6741] text-white rounded-lg hover:bg-[#3A5233] transition-colors font-medium shadow-lg"
+                  className="shrink-0 p-3 rounded-xl bg-[#F4F6F0] text-[#6B7A74] hover:bg-[#2D4B3E] hover:text-white transition-colors"
+                  title="复制标题"
                 >
-                  {copiedId === index ? (
-                    <>
-                      <Check size={16} />
-                      已复制
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={16} />
-                      复制标题
-                    </>
-                  )}
+                  {copiedIndex === index ? <Check size={18} /> : <Copy size={18} />}
                 </button>
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        !isGenerating && !error && (
-          <div className="bg-white rounded-xl p-10 text-center border border-[#E2E8D5]">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#F4F6F0] text-[#9CA89F] mb-4">
-              <Lightbulb size={32} />
+              
+              <div className="flex flex-wrap gap-2 mb-5">
+                {topic.tags?.map((tag, i) => (
+                  <span 
+                    key={i} 
+                    className="text-xs px-3 py-1.5 rounded-lg bg-[#F4F6F0] text-[#2D4B3E] font-medium"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              
+              <div className="flex items-center gap-6 text-xs text-[#6B7A74] pt-5 border-t border-[#2D4B3E]/5">
+                <div className="flex items-center gap-1.5">
+                  <TrendingUp size={14} className="text-[#2D4B3E]" />
+                  <span className="font-bold">{topic.potential}</span>
+                </div>
+                {topic.difficulty && (
+                  <div className="flex items-center gap-1.5">
+                    <Star size={14} className="text-[#C5A267]" />
+                    <span className="font-bold">难度: {topic.difficulty}</span>
+                  </div>
+                )}
+                <ChevronRight size={14} className="ml-auto text-[#9BA8A3]" />
+              </div>
+              
+              {topic.outline && (
+                <div className="mt-5 p-4 bg-[#FDFBF7] rounded-xl border border-[#C5A267]/20">
+                  <p className="text-sm text-[#C5A267] flex items-start gap-2">
+                    <Sparkles size={14} className="shrink-0 mt-0.5" />
+                    <span><strong>创作提示：</strong>{topic.outline}</span>
+                  </p>
+                </div>
+              )}
             </div>
-            <p className="text-[#7D8A80]">选择内容类型和季节，生成你的专属选题！</p>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {topics.length === 0 && !loading && (
+        <div className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-16 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="inline-block p-5 bg-[#F4F6F0] rounded-2xl text-[#9BA8A3] mb-5">
+            <Wand2 size={44} />
           </div>
-        )
+          <h3 className="text-xl font-bold text-[#2D4B3E] mb-2 font-serif">等待你的灵感召唤</h3>
+          <p className="text-[#6B7A74] max-w-sm mx-auto">
+            选择一个内容赛道，点击上方按钮，AI将为你生成精准匹配的爆款选题
+          </p>
+        </div>
       )}
     </div>
   );

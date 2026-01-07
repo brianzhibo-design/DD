@@ -1,39 +1,45 @@
 'use client';
 
-import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import MobileHeader from './MobileHeader';
 
-const CUSTOM_HEADER_PAGES = ['/assistant'];
-const NO_LAYOUT_PAGES = ['/login'];
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+export default function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   
-  const noLayout = NO_LAYOUT_PAGES.some(page => pathname?.startsWith(page));
-  
-  if (noLayout) {
+  // 登录页面不显示导航
+  if (pathname === '/login') {
     return <>{children}</>;
   }
-  
-  const hasCustomHeader = CUSTOM_HEADER_PAGES.some(page => pathname?.startsWith(page));
-  
+
+  // AI 助手页面使用自己的 header
+  const showMobileHeader = pathname !== '/assistant';
+
   return (
-    <div className="flex min-h-screen min-h-dvh bg-[#FDFBF7]">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col min-w-0">
-        {!hasCustomHeader && <MobileHeader />}
+    <div className="min-h-screen bg-[#FDFBF7]">
+      <div className="flex">
+        {/* Desktop Sidebar */}
+        <Sidebar />
         
-        <main className={`flex-1 overflow-auto ${hasCustomHeader ? '' : 'p-4 lg:p-8 pb-24 lg:pb-8'}`}>
-          {children}
-        </main>
+        {/* Main Content */}
+        <div className="flex-1 min-h-screen">
+          {/* Mobile Header */}
+          {showMobileHeader && <MobileHeader />}
+          
+          {/* Page Content */}
+          <main className="p-5 lg:p-10 pb-24 lg:pb-10">
+            {children}
+          </main>
+        </div>
       </div>
       
-      <BottomNav onMoreClick={() => setSidebarOpen(true)} />
+      {/* Mobile Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

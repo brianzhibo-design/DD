@@ -1,43 +1,48 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;800&family=Noto+Sans+SC:wght@300;400;500;700&family=ZCOOL+XiaoWei&display=swap');
 
 /* ============================================
-   小离岛岛 · 内容运营系统
-   Design: 复古乳绿 (Retro Cream Green)
+   小离岛岛 · 翡翠森绿设计系统
+   Design: Jade Forest Premium
    ============================================ */
 
 :root {
-  /* ===== 字体系统 ===== */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+  /* ===== 核心色彩 ===== */
+  --color-primary: #2D4B3E;          /* 翡翠森绿 */
+  --color-primary-light: #426B5A;
+  --color-secondary: #C5A267;        /* 琥珀金 */
   
-  /* ===== 复古乳绿配色 ===== */
-  --color-bg: #FDFBF7;           /* 乳白色背景 */
-  --color-card: #FFFFFF;         /* 纯白卡片 */
-  --color-border: #E2E8D5;       /* 浅绿边框 */
-  --color-border-hover: #D5DCC8;
+  --color-bg: #FDFBF7;               /* 燕麦奶 */
+  --color-bg-warm: #F7F3EE;          /* 暖燕麦 */
+  --color-card: #FFFFFF;
   
-  --color-text: #2D3A30;         /* 深绿文字 */
-  --color-text-secondary: #7D8A80; /* 灰绿次要文字 */
-  --color-text-muted: #9CA89F;
+  --color-border: rgba(45, 75, 62, 0.08);
+  --color-border-hover: rgba(45, 75, 62, 0.15);
   
-  --color-accent: #4A6741;       /* 复古深绿强调色 */
-  --color-accent-hover: #3A5233;
+  --color-text: #1A2421;             /* 炭黑绿 */
+  --color-text-secondary: #6B7A74;   /* 灰绿 */
+  --color-text-muted: #9BA8A3;
   
-  --color-sidebar: #F4F6F0;      /* 侧边栏浅绿灰 */
+  --color-success: #2D4B3E;
+  --color-warning: #C5A267;
+  --color-danger: #B85C5C;
   
-  --color-success: #4A6741;
-  --color-warning: #B8860B;
-  --color-danger: #C75050;
+  /* ===== 字体 ===== */
+  --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Lexend', 'Noto Sans SC', sans-serif;
+  --font-serif: 'ZCOOL XiaoWei', serif;
   
   /* ===== 圆角 ===== */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 0.75rem;      /* 12px */
+  --radius-md: 1rem;         /* 16px */
+  --radius-lg: 1.5rem;       /* 24px */
+  --radius-xl: 2rem;         /* 32px */
+  --radius-full: 9999px;
   
   /* ===== 阴影 ===== */
-  --shadow-sm: 0 1px 2px rgba(45, 58, 48, 0.04);
-  --shadow-md: 0 4px 6px rgba(45, 58, 48, 0.06);
-  --shadow-lg: 0 10px 20px rgba(45, 58, 48, 0.08);
+  --shadow-soft: 0 8px 30px rgb(0 0 0 / 0.04);
+  --shadow-float: 0 20px 50px rgba(45, 75, 62, 0.1);
+  --shadow-button: 0 4px 15px rgba(45, 75, 62, 0.2);
 }
 
 @theme inline {
@@ -61,15 +66,38 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.6;
   min-height: 100vh;
   min-height: 100dvh;
 }
 
+/* ===== 字体工具类 ===== */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
 /* ===== 排版 ===== */
-h1 { font-size: 1.5rem; font-weight: 700; }
-h2 { font-size: 1.125rem; font-weight: 600; }
-h3 { font-size: 1rem; font-weight: 600; }
+h1 { 
+  font-family: var(--font-serif); 
+  font-size: 2rem; 
+  font-weight: 400; 
+  letter-spacing: -0.02em;
+}
+
+h2 { 
+  font-family: var(--font-serif); 
+  font-size: 1.5rem; 
+  font-weight: 400; 
+}
+
+h3 { 
+  font-size: 1.125rem; 
+  font-weight: 700; 
+}
 
 /* ===== 滚动条 ===== */
 ::-webkit-scrollbar {
@@ -92,7 +120,7 @@ h3 { font-size: 1rem; font-weight: 600; }
 
 /* ===== 选中文本 ===== */
 ::selection {
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: white;
 }
 
@@ -141,6 +169,15 @@ h3 { font-size: 1rem; font-weight: 600; }
 
 .message-appear {
   animation: message-appear 0.2s ease-out forwards;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
 }
 
 /* ===== Reduced Motion ===== */

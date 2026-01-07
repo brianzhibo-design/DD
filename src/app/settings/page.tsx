@@ -1,99 +1,101 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap, Camera, User, Lock, Eye, EyeOff, Shield, LogOut, Check, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { 
+  Settings, 
+  Database, 
+  Bot, 
+  RefreshCw, 
+  CheckCircle2, 
+  XCircle,
+  User,
+  Upload,
+  Loader2,
+  Key,
+  LogOut,
+  Eye,
+  EyeOff,
+  Save,
+  Type,
+  Check
+} from 'lucide-react';
 import { testSupabaseConnection } from '@/lib/db';
-import { getUserProfile, saveUserProfile, compressImage, UserProfile, loadUserProfile } from '@/lib/user-profile';
+import { getUserProfile, UserProfile, loadUserProfile, saveUserProfile, compressImage } from '@/lib/user-profile';
 
-interface ApiStatus {
-  success: boolean;
-  message: string;
+interface ConnectionStatus {
+  name: string;
+  icon: React.ComponentType<{ className?: string; size?: number }>;
+  status: 'checking' | 'connected' | 'error';
+  message?: string;
 }
 
 export default function SettingsPage() {
-  const [supabaseStatus, setSupabaseStatus] = useState<ApiStatus | null>(null);
-  const [claudeStatus, setClaudeStatus] = useState<ApiStatus | null>(null);
-  const [oneapiStatus, setOneapiStatus] = useState<ApiStatus | null>(null);
-  const [testingSupabase, setTestingSupabase] = useState(false);
-  const [testingClaude, setTestingClaude] = useState(false);
-  const [testingOneapi, setTestingOneapi] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>({});
+  const [connections, setConnections] = useState<ConnectionStatus[]>([
+    { name: 'Supabase 数据库', icon: Database, status: 'checking' },
+    { name: 'Claude AI', icon: Bot, status: 'checking' },
+    { name: 'OneAPI 小红书', icon: RefreshCw, status: 'checking' },
+  ]);
+
+  const [userProfile, setUserProfileState] = useState<UserProfile>({});
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [nickname, setNickname] = useState('');
-  
-  // 密码修改状态
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPasswords, setShowPasswords] = useState(false);
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
-  const router = useRouter();
-  
-  const testSupabase = async () => {
-    setTestingSupabase(true);
-    const result = await testSupabaseConnection();
-    setSupabaseStatus(result);
-    setTestingSupabase(false);
-  };
+  const [savingProfile, setSavingProfile] = useState(false);
 
-  const testClaude = async () => {
-    setTestingClaude(true);
-    try {
-      const response = await fetch('/api/chat', { method: 'GET' });
-      const data = await response.json();
-      if (data.configured) {
-        setClaudeStatus({ success: true, message: '已配置' });
-      } else {
-        setClaudeStatus({ success: false, message: 'API Key 未配置' });
-      }
-    } catch {
-      setClaudeStatus({ success: false, message: '检测失败' });
-    }
-    setTestingClaude(false);
-  };
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [showPwds, setShowPwds] = useState(false);
+  const [changingPwd, setChangingPwd] = useState(false);
 
-  const testOneapi = async () => {
-    setTestingOneapi(true);
-    try {
-      const response = await fetch('/api/sync-xhs', { method: 'GET' });
-      const data = await response.json();
-      if (data.configured?.oneapiKey && data.configured?.xhsUserId) {
-        setOneapiStatus({ success: true, message: '已配置' });
-      } else if (data.configured?.oneapiKey) {
-        setOneapiStatus({ success: false, message: '缺少 XHS_USER_ID' });
-      } else if (data.configured?.xhsUserId) {
-        setOneapiStatus({ success: false, message: '缺少 ONEAPI_KEY' });
-      } else {
-        setOneapiStatus({ success: false, message: '未配置' });
-      }
-    } catch {
-      setOneapiStatus({ success: false, message: '检测失败' });
-    }
-    setTestingOneapi(false);
-  };
-
-  const testAllConnections = async () => {
-    testSupabase();
-    testClaude();
-    testOneapi();
-  };
+  const [selectedFont, setSelectedFont] = useState('modern');
 
   useEffect(() => {
-    const cached = getUserProfile();
-    setUserProfile(cached);
-    setNickname(cached.nickname || '');
-    
-    loadUserProfile().then(profile => {
-      setUserProfile(profile);
-      setNickname(profile.nickname || '');
-    });
+    checkConnections();
+    loadProfile();
   }, []);
-  
-  useEffect(() => {
-    testAllConnections();
-  }, []);
+
+  const loadProfile = async () => {
+    const profile = await loadUserProfile();
+    setUserProfileState(profile);
+    setNickname(profile.nickname || '');
+  };
+
+  const checkConnections = async () => {
+    const supabaseOk = await testSupabaseConnection();
+    setConnections(prev => prev.map(c => 
+      c.name === 'Supabase 数据库' 
+        ? { ...c, status: supabaseOk ? 'connected' : 'error', message: supabaseOk ? '连接正常' : '连接失败' }
+        : c
+    ));
+
+    try {
+      const aiRes = await fetch('/api/chat', { method: 'GET' });
+      const aiData = await aiRes.json();
+      setConnections(prev => prev.map(c => 
+        c.name === 'Claude AI' 
+          ? { ...c, status: aiData.configured ? 'connected' : 'error', message: aiData.configured ? 'API已配置' : '未配置API Key' }
+          : c
+      ));
+    } catch {
+      setConnections(prev => prev.map(c => 
+        c.name === 'Claude AI' ? { ...c, status: 'error', message: '检测失败' } : c
+      ));
+    }
+
+    try {
+      const oneRes = await fetch('/api/sync-xhs', { method: 'GET' });
+      const oneData = await oneRes.json();
+      setConnections(prev => prev.map(c => 
+        c.name === 'OneAPI 小红书' 
+          ? { ...c, status: oneData.configured ? 'connected' : 'error', message: oneData.configured ? 'API已配置' : '未配置' }
+          : c
+      ));
+    } catch {
+      setConnections(prev => prev.map(c => 
+        c.name === 'OneAPI 小红书' ? { ...c, status: 'error', message: '检测失败' } : c
+      ));
+    }
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -104,359 +106,284 @@ export default function SettingsPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('图片大小不能超过5MB');
-      return;
-    }
+    setUploadingAvatar(true);
 
     try {
-      const base64 = await compressImage(file, 150);
-      const updated = { ...userProfile, avatar: base64 };
-      const success = await saveUserProfile(updated);
-      if (success) {
-        setUserProfile(updated);
-      } else {
-        alert('保存失败，请重试');
-      }
-    } catch {
-      alert('图片处理失败');
+      const base64 = await compressImage(file, 200);
+      const newProfile = { ...userProfile, avatar: base64 };
+      await saveUserProfile(newProfile);
+      setUserProfileState(newProfile);
+    } catch (error) {
+      console.error('上传失败:', error);
+      alert('上传失败');
     }
+
+    setUploadingAvatar(false);
   };
 
   const handleSaveNickname = async () => {
-    const updated = { ...userProfile, nickname };
-    const success = await saveUserProfile(updated);
-    if (success) {
-      setUserProfile(updated);
-      alert('昵称已保存');
-    } else {
-      alert('保存失败，请重试');
+    setSavingProfile(true);
+    try {
+      const newProfile = { ...userProfile, nickname };
+      await saveUserProfile(newProfile);
+      setUserProfileState(newProfile);
+      alert('保存成功');
+    } catch (error) {
+      console.error('保存失败:', error);
+      alert('保存失败');
     }
+    setSavingProfile(false);
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordMessage(null);
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordMessage({ type: 'error', text: '请填写所有字段' });
+  const handleChangePassword = async () => {
+    if (!currentPwd || !newPwd || !confirmPwd) {
+      alert('请填写完整');
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      alert('两次密码不一致');
+      return;
+    }
+    if (newPwd.length < 4) {
+      alert('新密码至少4位');
       return;
     }
 
-    if (newPassword.length < 6) {
-      setPasswordMessage({ type: 'error', text: '新密码至少6位' });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordMessage({ type: 'error', text: '两次输入的新密码不一致' });
-      return;
-    }
-
-    setPasswordLoading(true);
-
+    setChangingPwd(true);
     try {
-      const response = await fetch('/api/auth/password', {
+      const res = await fetch('/api/auth/password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword })
+        body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd })
       });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setPasswordMessage({ type: 'success', text: '密码修改成功' });
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+      const data = await res.json();
+      if (data.success) {
+        alert('密码修改成功');
+        setCurrentPwd('');
+        setNewPwd('');
+        setConfirmPwd('');
       } else {
-        setPasswordMessage({ type: 'error', text: result.error || '修改失败' });
+        alert(data.error || '修改失败');
       }
-    } catch {
-      setPasswordMessage({ type: 'error', text: '网络错误，请重试' });
+    } catch (error) {
+      alert('修改失败');
     }
-
-    setPasswordLoading(false);
+    setChangingPwd(false);
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     if (confirm('确定要退出登录吗？')) {
-      await fetch('/api/auth', { method: 'DELETE' });
-      router.push('/login');
+      localStorage.removeItem('daodao_auth_token');
+      window.location.href = '/login';
     }
   };
-  
+
+  const fontOptions = [
+    { id: 'modern', name: '现代主义', desc: 'Lexend + Noto Sans SC' },
+    { id: 'classical', name: '复古宋体', desc: 'ZCOOL XiaoWei' },
+    { id: 'playful', name: '治愈圆体', desc: 'ZCOOL KuaiLe' },
+  ];
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[#2D3A30] mb-2 flex items-center gap-2">
-          <Settings size={24} className="text-[#4A6741]" />
-          系统设置
-        </h1>
-        <p className="text-[#7D8A80]">管理个人资料和系统配置</p>
+    <div className="max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="mb-10">
+        <h1 className="text-3xl font-serif text-[#2D4B3E] mb-2">系统设置</h1>
+        <p className="text-[#6B7A74]">管理账户、连接状态和个性化配置</p>
       </div>
 
-      {/* 个人资料 */}
-      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
-        <h2 className="font-bold text-[#2D3A30] mb-4 flex items-center gap-2">
-          <User size={18} className="text-[#4A6741]" />
-          个人资料
-        </h2>
+      {/* Profile Section */}
+      <div className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6">
+        <div className="flex items-center gap-2 mb-8">
+          <User className="w-5 h-5 text-[#2D4B3E]" />
+          <h2 className="font-bold text-[#2D4B3E] font-serif">个人资料</h2>
+        </div>
         
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-[#F4F6F0] border-4 border-white shadow-lg">
-              {userProfile.avatar ? (
-                <img 
-                  src={userProfile.avatar} 
-                  alt="头像"
-                  className="w-full h-full object-cover"
-                />
+        <div className="flex flex-col md:flex-row items-start gap-8">
+          {/* Avatar */}
+          <label className="relative cursor-pointer group shrink-0">
+            <div className={`w-28 h-28 rounded-2xl overflow-hidden border-2 border-dashed transition-colors ${
+              uploadingAvatar ? 'border-[#6B7A74] bg-[#F4F6F0]' : 'border-[#2D4B3E]/20 hover:border-[#2D4B3E]/40'
+            } flex items-center justify-center bg-[#F4F6F0]`}>
+              {uploadingAvatar ? (
+                <Loader2 className="w-6 h-6 text-[#2D4B3E] animate-spin" />
+              ) : userProfile.avatar ? (
+                <img src={userProfile.avatar} alt="头像" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <User size={40} className="text-[#9CA89F]" />
-                </div>
+                <Upload size={24} className="text-[#6B7A74]" />
               )}
             </div>
-            <label className="absolute bottom-0 right-0 w-8 h-8 bg-[#4A6741] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#3A5233] transition-colors shadow-md">
-              <Camera size={16} className="text-white" />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+              disabled={uploadingAvatar}
+            />
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-[#6B7A74] bg-white px-2 py-0.5 rounded-md shadow whitespace-nowrap">
+              点击上传
+            </div>
+          </label>
 
-          <div className="flex-1 w-full sm:w-auto">
-            <label className="block text-sm font-medium text-[#2D3A30] mb-2">昵称</label>
-            <div className="flex gap-2">
+          {/* Nickname */}
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-bold text-[#2D4B3E] mb-2">昵称</label>
+            <div className="flex gap-3">
               <input
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="输入你的昵称"
-                className="flex-1 px-4 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] outline-none text-[#2D3A30] bg-white"
+                className="flex-1 px-4 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 bg-[#F4F6F0] text-[#2D4B3E]"
+                placeholder="输入昵称"
               />
               <button
                 onClick={handleSaveNickname}
-                className="px-4 py-2 bg-[#4A6741] text-white rounded-lg hover:bg-[#3A5233] transition-colors shadow-sm"
+                disabled={savingProfile}
+                className="px-6 py-3 bg-[#2D4B3E] text-white rounded-xl hover:bg-[#3D6654] transition-colors disabled:opacity-50 font-bold shadow-lg shadow-[#2D4B3E]/20 flex items-center gap-2"
               >
+                {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
                 保存
               </button>
             </div>
-            <p className="text-xs text-[#7D8A80] mt-2">头像和昵称将显示在侧边栏和首页</p>
           </div>
         </div>
       </div>
-      
-      {/* 服务连接状态 */}
-      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-[#2D3A30] flex items-center gap-2">
-            <Zap size={18} className="text-[#4A6741]" />
-            服务连接状态
-          </h2>
+
+      {/* Font Settings */}
+      <div className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Type className="w-5 h-5 text-[#2D4B3E]" />
+          <h2 className="font-bold text-[#2D4B3E] font-serif">字体预设</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {fontOptions.map(font => (
+            <button
+              key={font.id}
+              onClick={() => setSelectedFont(font.id)}
+              className={`p-5 rounded-xl text-left transition-all border-2 ${
+                selectedFont === font.id 
+                  ? 'border-[#2D4B3E] bg-[#F4F6F0]' 
+                  : 'border-transparent bg-[#FDFBF7] hover:bg-[#F4F6F0]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-[#2D4B3E]">{font.name}</span>
+                {selectedFont === font.id && (
+                  <Check size={16} className="text-[#2D4B3E]" />
+                )}
+              </div>
+              <span className="text-xs text-[#6B7A74]">{font.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Connection Status */}
+      <div className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Database className="w-5 h-5 text-[#2D4B3E]" />
+            <h2 className="font-bold text-[#2D4B3E] font-serif">服务连接状态</h2>
+          </div>
           <button
-            onClick={testAllConnections}
-            disabled={testingSupabase || testingClaude || testingOneapi}
-            className="text-sm text-[#7D8A80] hover:text-[#4A6741] flex items-center gap-1 disabled:opacity-50"
+            onClick={checkConnections}
+            className="text-sm text-[#6B7A74] hover:text-[#2D4B3E] flex items-center gap-1.5"
           >
-            <RefreshCw size={14} className={(testingSupabase || testingClaude || testingOneapi) ? 'animate-spin' : ''} />
+            <RefreshCw size={14} />
             刷新
           </button>
         </div>
         
-        <div className="space-y-3">
-          {/* Supabase */}
-          <div className="flex items-center justify-between p-4 bg-[#F4F6F0] rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <Database size={20} className="text-[#4A6741]" />
+        <div className="space-y-4">
+          {connections.map((conn, i) => (
+            <div 
+              key={i} 
+              className="flex items-center justify-between p-4 bg-[#FDFBF7] rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${
+                  conn.status === 'connected' ? 'bg-emerald-50 text-emerald-600' :
+                  conn.status === 'error' ? 'bg-red-50 text-red-500' :
+                  'bg-[#F4F6F0] text-[#6B7A74]'
+                }`}>
+                  <conn.icon size={18} />
+                </div>
+                <div>
+                  <p className="font-bold text-[#2D4B3E]">{conn.name}</p>
+                  <p className="text-xs text-[#6B7A74]">{conn.message || '检测中...'}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-[#2D3A30]">Supabase</p>
-                <p className="text-xs text-[#7D8A80]">PostgreSQL 云数据库</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {testingSupabase ? (
-                <RefreshCw size={16} className="text-[#7D8A80] animate-spin" />
-              ) : supabaseStatus?.success ? (
-                <CheckCircle size={16} className="text-[#4A6741]" />
+              
+              {conn.status === 'checking' ? (
+                <Loader2 size={18} className="text-[#6B7A74] animate-spin" />
+              ) : conn.status === 'connected' ? (
+                <CheckCircle2 size={18} className="text-emerald-500" />
               ) : (
-                <XCircle size={16} className="text-[#C75050]" />
+                <XCircle size={18} className="text-red-500" />
               )}
-              <span className={`text-sm ${supabaseStatus?.success ? 'text-[#4A6741]' : 'text-[#C75050]'}`}>
-                {testingSupabase ? '检测中...' : supabaseStatus?.message}
-              </span>
             </div>
-          </div>
-
-          {/* Claude AI */}
-          <div className="flex items-center justify-between p-4 bg-[#F4F6F0] rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <Bot size={20} className="text-[#4A6741]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#2D3A30]">Claude AI</p>
-                <p className="text-xs text-[#7D8A80]">Anthropic API Key</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {testingClaude ? (
-                <RefreshCw size={16} className="text-[#7D8A80] animate-spin" />
-              ) : claudeStatus?.success ? (
-                <CheckCircle size={16} className="text-[#4A6741]" />
-              ) : (
-                <XCircle size={16} className="text-[#C75050]" />
-              )}
-              <span className={`text-sm ${claudeStatus?.success ? 'text-[#4A6741]' : 'text-[#C75050]'}`}>
-                {testingClaude ? '检测中...' : claudeStatus?.message}
-              </span>
-            </div>
-          </div>
-
-          {/* OneAPI */}
-          <div className="flex items-center justify-between p-4 bg-[#F4F6F0] rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <Key size={20} className="text-[#4A6741]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#2D3A30]">OneAPI 小红书</p>
-                <p className="text-xs text-[#7D8A80]">数据同步服务</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {testingOneapi ? (
-                <RefreshCw size={16} className="text-[#7D8A80] animate-spin" />
-              ) : oneapiStatus?.success ? (
-                <CheckCircle size={16} className="text-[#4A6741]" />
-              ) : (
-                <XCircle size={16} className="text-[#C75050]" />
-              )}
-              <span className={`text-sm ${oneapiStatus?.success ? 'text-[#4A6741]' : 'text-[#C75050]'}`}>
-                {testingOneapi ? '检测中...' : oneapiStatus?.message}
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* 修改密码 */}
-      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-[#F4F6F0] rounded-lg flex items-center justify-center">
-            <Shield size={18} className="text-[#4A6741]" />
-          </div>
-          <div>
-            <h2 className="font-bold text-[#2D3A30]">修改密码</h2>
-            <p className="text-sm text-[#7D8A80]">定期更换密码保护账户安全</p>
-          </div>
+      {/* Password Change */}
+      <div className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Key className="w-5 h-5 text-[#2D4B3E]" />
+          <h2 className="font-bold text-[#2D4B3E] font-serif">修改密码</h2>
         </div>
-
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <div>
-            <label htmlFor="current-password" className="block text-sm font-medium text-[#2D3A30] mb-2">当前密码</label>
-            <div className="relative">
-              <input
-                id="current-password"
-                type={showPasswords ? 'text' : 'password'}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-white border border-[#E2E8D5] rounded-xl px-4 py-3 pr-12 outline-none focus:border-[#4A6741] focus:ring-2 focus:ring-[#4A6741]/20 transition-all text-[#2D3A30]"
-                placeholder="输入当前密码"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPasswords(!showPasswords)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#7D8A80] hover:text-[#4A6741]"
-              >
-                {showPasswords ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="new-password" className="block text-sm font-medium text-[#2D3A30] mb-2">新密码</label>
+        
+        <div className="space-y-4">
+          <div className="relative">
             <input
-              id="new-password"
-              type={showPasswords ? 'text' : 'password'}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-white border border-[#E2E8D5] rounded-xl px-4 py-3 outline-none focus:border-[#4A6741] focus:ring-2 focus:ring-[#4A6741]/20 transition-all text-[#2D3A30]"
-              placeholder="输入新密码 (至少6位)"
+              type={showPwds ? 'text' : 'password'}
+              placeholder="当前密码"
+              value={currentPwd}
+              onChange={(e) => setCurrentPwd(e.target.value)}
+              className="w-full px-4 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 bg-[#F4F6F0] text-[#2D4B3E] pr-12"
             />
+            <button
+              type="button"
+              onClick={() => setShowPwds(!showPwds)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B7A74]"
+            >
+              {showPwds ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-
-          <div>
-            <label htmlFor="confirm-password" className="block text-sm font-medium text-[#2D3A30] mb-2">确认新密码</label>
-            <input
-              id="confirm-password"
-              type={showPasswords ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-white border border-[#E2E8D5] rounded-xl px-4 py-3 outline-none focus:border-[#4A6741] focus:ring-2 focus:ring-[#4A6741]/20 transition-all text-[#2D3A30]"
-              placeholder="再次输入新密码"
-            />
-          </div>
-
-          {passwordMessage && (
-            <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
-              passwordMessage.type === 'success' ? 'bg-[#4A6741]/10 text-[#4A6741] border border-[#4A6741]/20' : 'bg-[#C75050]/10 text-[#C75050] border border-[#C75050]/20'
-            }`}>
-              {passwordMessage.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
-              {passwordMessage.text}
-            </div>
-          )}
-
+          <input
+            type={showPwds ? 'text' : 'password'}
+            placeholder="新密码"
+            value={newPwd}
+            onChange={(e) => setNewPwd(e.target.value)}
+            className="w-full px-4 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 bg-[#F4F6F0] text-[#2D4B3E]"
+          />
+          <input
+            type={showPwds ? 'text' : 'password'}
+            placeholder="确认新密码"
+            value={confirmPwd}
+            onChange={(e) => setConfirmPwd(e.target.value)}
+            className="w-full px-4 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 bg-[#F4F6F0] text-[#2D4B3E]"
+          />
           <button
-            type="submit"
-            disabled={passwordLoading}
-            className="w-full bg-[#4A6741] text-white font-semibold py-3 rounded-xl shadow-lg hover:bg-[#3A5233] transition-all disabled:opacity-50"
+            onClick={handleChangePassword}
+            disabled={changingPwd}
+            className="w-full bg-[#2D4B3E] text-white py-4 rounded-xl hover:bg-[#3D6654] transition-colors disabled:opacity-50 font-bold shadow-lg shadow-[#2D4B3E]/20 flex items-center justify-center gap-2"
           >
-            {passwordLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 size={20} className="animate-spin" />
-                修改中...
-              </span>
-            ) : (
-              '修改密码'
-            )}
-          </button>
-        </form>
-      </div>
-
-      {/* 退出登录 */}
-      <div className="bg-white rounded-xl p-6 border border-[#E2E8D5] mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#F4F6F0] rounded-xl flex items-center justify-center">
-              <LogOut size={20} className="text-[#7D8A80]" />
-            </div>
-            <div>
-              <h2 className="font-bold text-[#2D3A30]">退出登录</h2>
-              <p className="text-sm text-[#7D8A80]">退出当前账户</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="px-5 py-2.5 bg-[#C75050] text-white rounded-xl hover:bg-[#B04545] transition-colors shadow-lg"
-          >
-            退出
+            {changingPwd ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key size={18} />}
+            修改密码
           </button>
         </div>
       </div>
 
-      {/* 关于 */}
-      <div className="mt-8 text-center text-sm text-[#7D8A80]">
-        <p>小离岛岛 · 小红书运营系统</p>
-        <p className="mt-1">内容创作 × 生活方式 × 精致分享</p>
-        <p className="mt-2">Powered by Claude + Supabase</p>
-      </div>
+      {/* Logout */}
+      <button
+        onClick={handleLogout}
+        className="w-full bg-red-50 text-red-600 py-4 rounded-xl hover:bg-red-100 transition-colors font-bold flex items-center justify-center gap-2"
+      >
+        <LogOut size={18} />
+        退出登录
+      </button>
     </div>
   );
 }

@@ -137,28 +137,28 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-[2rem] w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_20px_50px_rgba(45,75,62,0.2)]">
         {/* 头部 */}
-        <div className="sticky top-0 p-4 border-b border-[#E2E8D5] bg-[#F4F6F0] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CatIcon size={24} className="text-[#4A6741]" />
-            <h3 className="font-bold text-lg text-[#2D3A30]">编辑 {cat.name} 的档案</h3>
+        <div className="sticky top-0 p-5 border-b border-[#2D4B3E]/5 bg-[#F7F3EE] rounded-t-[2rem] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CatIcon size={24} className="text-[#2D4B3E]" />
+            <h3 className="font-bold text-lg text-[#2D4B3E]">编辑 {cat.name} 的档案</h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/50 rounded-lg">
-            <X size={20} className="text-[#7D8A80]" />
+          <button onClick={onClose} className="p-2 hover:bg-white/50 rounded-xl">
+            <X size={20} className="text-[#6B7A74]" />
           </button>
         </div>
         
-        <div className="p-4">
+        <div className="p-6">
           {/* 模式切换 */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-6">
             <button 
               onClick={() => setMode('form')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
                 mode === 'form' 
-                  ? 'bg-[#4A6741] text-white shadow-md' 
-                  : 'bg-[#F4F6F0] text-[#7D8A80] hover:bg-[#E2E8D5]'
+                  ? 'bg-[#2D4B3E] text-white shadow-lg shadow-[#2D4B3E]/20' 
+                  : 'bg-[#F4F6F0] text-[#6B7A74] hover:bg-[#2D4B3E]/5'
               }`}
             >
               <FileText size={16} />
@@ -166,10 +166,10 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
             </button>
             <button 
               onClick={() => setMode('chat')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
                 mode === 'chat' 
-                  ? 'bg-[#4A6741] text-white shadow-md' 
-                  : 'bg-[#F4F6F0] text-[#7D8A80] hover:bg-[#E2E8D5]'
+                  ? 'bg-[#2D4B3E] text-white shadow-lg shadow-[#2D4B3E]/20' 
+                  : 'bg-[#F4F6F0] text-[#6B7A74] hover:bg-[#2D4B3E]/5'
               }`}
             >
               <MessageSquare size={16} />
@@ -178,11 +178,11 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
           </div>
 
           {mode === 'form' ? (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* 头像上传 */}
               <div className="flex justify-center">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-[#F4F6F0]">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-[#F4F6F0]">
                     {formData.avatar ? (
                       <img 
                         src={formData.avatar} 
@@ -191,11 +191,11 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <CatIcon size={40} className="text-[#4A6741]" />
+                        <CatIcon size={40} className="text-[#2D4B3E]" />
                       </div>
                     )}
                   </div>
-                  <label className="absolute bottom-0 right-0 w-8 h-8 bg-[#4A6741] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#3A5233] transition-colors">
+                  <label className="absolute bottom-0 right-0 w-8 h-8 bg-[#2D4B3E] rounded-xl flex items-center justify-center cursor-pointer hover:bg-[#3D6654] transition-colors shadow-lg">
                     <Camera size={16} className="text-white" />
                     <input
                       type="file"
@@ -206,32 +206,32 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
                   </label>
                 </div>
               </div>
-              <p className="text-center text-xs text-[#7D8A80]">点击相机图标上传头像</p>
+              <p className="text-center text-xs text-[#6B7A74]">点击相机图标上传头像</p>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-[#2D3A30]">昵称</label>
+                <label className="block text-sm font-bold mb-2 text-[#2D4B3E]">昵称</label>
                 <input 
                   type="text"
                   value={formData.nickname || ''}
                   onChange={e => setFormData({...formData, nickname: e.target.value})}
                   placeholder="如：胖虎、大橘..."
-                  className="w-full px-3 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] text-[#2D3A30]"
+                  className="w-full px-5 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 text-[#2D4B3E] bg-[#F4F6F0]"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-[#2D3A30]">性格特点</label>
+                <label className="block text-sm font-bold mb-2 text-[#2D4B3E]">性格特点</label>
                 <input 
                   type="text"
                   value={formData.personality || ''}
                   onChange={e => setFormData({...formData, personality: e.target.value})}
                   placeholder="如：高冷、粘人、调皮..."
-                  className="w-full px-3 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] text-[#2D3A30]"
+                  className="w-full px-5 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 text-[#2D4B3E] bg-[#F4F6F0]"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-[#2D3A30]">特征标签（逗号分隔）</label>
+                <label className="block text-sm font-bold mb-2 text-[#2D4B3E]">特征标签（逗号分隔）</label>
                 <input 
                   type="text"
                   value={formData.traits?.join(', ') || ''}
@@ -240,65 +240,65 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
                     traits: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                   })}
                   placeholder="如：爱吃, 怕生, 会握手..."
-                  className="w-full px-3 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] text-[#2D3A30]"
+                  className="w-full px-5 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 text-[#2D4B3E] bg-[#F4F6F0]"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-[#2D3A30]">外貌描述</label>
+                <label className="block text-sm font-bold mb-2 text-[#2D4B3E]">外貌描述</label>
                 <input 
                   type="text"
                   value={formData.appearance || ''}
                   onChange={e => setFormData({...formData, appearance: e.target.value})}
                   placeholder="如：橘猫、长毛、蓝眼睛..."
-                  className="w-full px-3 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] text-[#2D3A30]"
+                  className="w-full px-5 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 text-[#2D4B3E] bg-[#F4F6F0]"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-[#2D3A30]">适合内容类型</label>
+                <label className="block text-sm font-bold mb-2 text-[#2D4B3E]">适合内容类型</label>
                 <input 
                   type="text"
                   value={formData.bestContentType || ''}
                   onChange={e => setFormData({...formData, bestContentType: e.target.value})}
                   placeholder="如：适合拍摄氛围感、颜值向内容..."
-                  className="w-full px-3 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] text-[#2D3A30]"
+                  className="w-full px-5 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 text-[#2D4B3E] bg-[#F4F6F0]"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-[#2D3A30]">备注</label>
+                <label className="block text-sm font-bold mb-2 text-[#2D4B3E]">备注</label>
                 <textarea 
                   value={formData.notes || ''}
                   onChange={e => setFormData({...formData, notes: e.target.value})}
                   placeholder="其他想记录的信息..."
-                  className="w-full px-3 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] h-20 resize-none text-[#2D3A30]"
+                  className="w-full px-5 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 h-24 resize-none text-[#2D4B3E] bg-[#F4F6F0]"
                 />
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="bg-[#F4F6F0] rounded-lg p-3 text-sm text-[#7D8A80] flex items-center gap-2">
-                <Lightbulb size={16} className="text-[#B8860B] flex-shrink-0" />
+            <div className="space-y-5">
+              <div className="bg-[#FDFBF7] rounded-xl p-4 text-sm text-[#6B7A74] flex items-center gap-3 border border-[#2D4B3E]/5">
+                <Lightbulb size={18} className="text-[#C5A267] flex-shrink-0" />
                 用自然语言描述 {cat.name} 的特点，AI会自动提取关键信息
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-[#2D3A30]">
+                <label className="block text-sm font-bold mb-2 text-[#2D4B3E]">
                   描述 {cat.name} 的特点
                 </label>
                 <textarea 
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   placeholder={`例如：${cat.name}是我养的第一只猫，特别高冷不太粘人，但是颜值很高很上镜，平时喜欢...`}
-                  className="w-full px-3 py-2 border border-[#E2E8D5] rounded-lg focus:ring-2 focus:ring-[#4A6741]/20 focus:border-[#4A6741] h-32 resize-none text-[#2D3A30]"
+                  className="w-full px-5 py-3 border-none rounded-xl focus:ring-2 focus:ring-[#2D4B3E]/10 h-36 resize-none text-[#2D4B3E] bg-[#F4F6F0]"
                 />
               </div>
               
               <button 
                 onClick={handleAnalyze}
                 disabled={analyzing || !chatInput.trim()}
-                className="w-full px-4 py-2 bg-[#4A6741] text-white rounded-lg hover:bg-[#3A5233] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full px-5 py-3 bg-[#2D4B3E] text-white rounded-xl hover:bg-[#3D6654] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-bold shadow-lg shadow-[#2D4B3E]/20"
               >
                 {analyzing ? (
                   <>
@@ -314,45 +314,45 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
               </button>
 
               {error && (
-                <div className="bg-[#C75050]/10 text-[#C75050] p-3 rounded-lg text-sm">
+                <div className="bg-[#B85C5C]/5 text-[#B85C5C] p-4 rounded-xl text-sm">
                   {error}
                 </div>
               )}
 
               {aiSuggestion && (
-                <div className="bg-[#4A6741]/10 rounded-lg p-4">
-                  <h4 className="font-medium mb-3 text-[#4A6741] flex items-center gap-2">
-                    <Sparkles size={16} />
+                <div className="bg-[#2D4B3E]/5 rounded-xl p-5">
+                  <h4 className="font-bold mb-4 text-[#2D4B3E] flex items-center gap-2">
+                    <Sparkles size={16} className="text-[#C5A267]" />
                     AI提取的信息：
                   </h4>
-                  <div className="text-sm space-y-2 text-[#2D3A30]">
+                  <div className="text-sm space-y-2 text-[#2D4B3E]">
                     {aiSuggestion.personality && (
-                      <p><span className="font-medium">性格：</span>{aiSuggestion.personality}</p>
+                      <p><span className="font-bold">性格：</span>{aiSuggestion.personality}</p>
                     )}
                     {aiSuggestion.traits && aiSuggestion.traits.length > 0 && (
-                      <p><span className="font-medium">特征：</span>{aiSuggestion.traits.join(', ')}</p>
+                      <p><span className="font-bold">特征：</span>{aiSuggestion.traits.join(', ')}</p>
                     )}
                     {aiSuggestion.appearance && (
-                      <p><span className="font-medium">外貌：</span>{aiSuggestion.appearance}</p>
+                      <p><span className="font-bold">外貌：</span>{aiSuggestion.appearance}</p>
                     )}
                     {aiSuggestion.bestContentType && (
-                      <p><span className="font-medium">适合内容：</span>{aiSuggestion.bestContentType}</p>
+                      <p><span className="font-bold">适合内容：</span>{aiSuggestion.bestContentType}</p>
                     )}
                     {aiSuggestion.notes && (
-                      <p><span className="font-medium">备注：</span>{aiSuggestion.notes}</p>
+                      <p><span className="font-bold">备注：</span>{aiSuggestion.notes}</p>
                     )}
                   </div>
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-3 mt-5">
                     <button 
                       onClick={handleAcceptSuggestion}
-                      className="flex-1 px-3 py-2 bg-[#4A6741] text-white rounded-lg text-sm hover:bg-[#3A5233] flex items-center justify-center gap-1"
+                      className="flex-1 px-4 py-2.5 bg-[#2D4B3E] text-white rounded-xl text-sm hover:bg-[#3D6654] flex items-center justify-center gap-1 font-bold"
                     >
                       <Check size={14} />
                       确认采用
                     </button>
                     <button 
                       onClick={() => setAiSuggestion(null)}
-                      className="flex-1 px-3 py-2 bg-[#E2E8D5] text-[#2D3A30] rounded-lg text-sm hover:bg-[#D5DCC8] flex items-center justify-center gap-1"
+                      className="flex-1 px-4 py-2.5 bg-[#F4F6F0] text-[#2D4B3E] rounded-xl text-sm hover:bg-[#2D4B3E]/10 flex items-center justify-center gap-1 font-bold"
                     >
                       <XCircle size={14} />
                       重新描述
@@ -364,10 +364,10 @@ export default function CatProfileEditor({ cat, onSave, onClose }: CatProfileEdi
           )}
 
           {/* 保存按钮 */}
-          <div className="mt-6 pt-4 border-t border-[#E2E8D5]">
+          <div className="mt-8 pt-5 border-t border-[#2D4B3E]/5">
             <button 
               onClick={handleSave}
-              className="w-full py-3 bg-[#4A6741] text-white rounded-xl font-medium hover:bg-[#3A5233] transition-colors flex items-center justify-center gap-2"
+              className="w-full py-4 bg-[#2D4B3E] text-white rounded-xl font-bold hover:bg-[#3D6654] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#2D4B3E]/20"
             >
               <Save size={18} />
               保存档案
