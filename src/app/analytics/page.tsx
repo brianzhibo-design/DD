@@ -14,7 +14,10 @@ import {
   AlertCircle,
   X,
   PieChart,
-  Trash2
+  Trash2,
+  Camera,
+  Check,
+  Loader2
 } from 'lucide-react';
 import { getWeeklyStats, saveWeeklyStat, deleteWeeklyStat, WeeklyStat } from '@/lib/db';
 
@@ -23,6 +26,8 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     week_start: '',
     week_end: '',
@@ -60,6 +65,7 @@ export default function AnalyticsPage() {
       const result = await saveWeeklyStat(formData);
       if (result) {
         setShowModal(false);
+        setPreviewImage(null);
         await loadData();
         setFormData({
           week_start: '',
@@ -89,6 +95,76 @@ export default function AnalyticsPage() {
     if (success) {
       await loadData();
     }
+  };
+
+  // 图片上传处理
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+      alert('请上传图片文件');
+      return;
+    }
+
+    // 检查文件大小（最大10MB）
+    if (file.size > 10 * 1024 * 1024) {
+      alert('图片大小不能超过10MB');
+      return;
+    }
+
+    setAnalyzing(true);
+
+    try {
+      // 转换为base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      setPreviewImage(base64);
+
+      // 调用AI识别API
+      const response = await fetch('/api/analyze-screenshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 })
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        // 自动填充表单（只填充识别到的字段）
+        setFormData(prev => ({
+          ...prev,
+          ...(result.data.followers !== undefined && { followers: result.data.followers }),
+          ...(result.data.new_followers !== undefined && { new_followers: result.data.new_followers }),
+          ...(result.data.likes !== undefined && { likes: result.data.likes }),
+          ...(result.data.saves !== undefined && { saves: result.data.saves }),
+          ...(result.data.comments !== undefined && { comments: result.data.comments }),
+          ...(result.data.views !== undefined && { views: result.data.views }),
+          ...(result.data.posts_count !== undefined && { posts_count: result.data.posts_count }),
+          ...(result.data.female_ratio !== undefined && { female_ratio: result.data.female_ratio }),
+        }));
+        
+        alert('识别成功！请检查数据并补充日期');
+      } else {
+        alert(result.error || '识别失败，请手动输入');
+      }
+    } catch (error) {
+      console.error('上传失败:', error);
+      alert('上传失败，请重试');
+    }
+
+    setAnalyzing(false);
+  };
+
+  // 重置截图上传状态
+  const resetImageUpload = () => {
+    setPreviewImage(null);
   };
 
   const latestStat = stats[0];
@@ -295,6 +371,52 @@ export default function AnalyticsPage() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 max-h-[80vh] overflow-y-auto">
+              {/* 截图上传区域 */}
+              <div className="mb-6">
+                <div className={`relative border-2 border-dashed rounded-2xl p-6 text-center transition-colors ${
+                  analyzing ? 'border-pink-300 bg-pink-50' : 'border-slate-200 hover:border-pink-300'
+                }`}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={analyzing}
+                  />
+                  
+                  {analyzing ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-pink-500 animate-spin" />
+                      <span className="text-pink-500 text-sm font-medium">AI正在识别中...</span>
+                    </div>
+                  ) : previewImage ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <img src={previewImage} alt="预览" className="max-h-24 rounded-lg" />
+                      <span className="text-green-500 text-sm flex items-center gap-1">
+                        <Check size={14} /> 已识别，点击可重新上传
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+                        <Camera className="w-6 h-6 text-slate-400" />
+                      </div>
+                      <div>
+                        <span className="text-slate-700 font-medium">上传小红书后台截图</span>
+                        <p className="text-slate-400 text-xs mt-1">AI自动识别数据，支持 PNG、JPG</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 分隔线 */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="flex-1 h-px bg-slate-200"></div>
+                <span className="text-slate-400 text-xs">或手动输入</span>
+                <div className="flex-1 h-px bg-slate-200"></div>
+              </div>
+
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <InputItem 
