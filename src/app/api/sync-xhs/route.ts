@@ -18,6 +18,8 @@ async function oneApiRequest(endpoint: string, body: object) {
   const apiKey = process.env.ONEAPI_KEY
   if (!apiKey) throw new Error('ONEAPI_KEY 未配置')
 
+  console.log(`[OneAPI] 请求: ${endpoint}`)
+
   const response = await fetch(`${ONEAPI_BASE}${endpoint}`, {
     method: 'POST',
     headers: {
@@ -53,28 +55,19 @@ export async function POST(request: NextRequest) {
     // ====== 1. 获取用户信息 ======
     const userResult = await oneApiRequest('/api/xiaohongshu/fetch_user_data_v4', { userId })
     
-    // 解析用户数据 - 数据在 data.data 里
+    // 解析用户数据 - 数据可能在 data.data 或直接在 data 里
     const userData = userResult.data || userResult
     
     const nickname = userData.nickname || '未知'
-    const fans = userData.fans || 0
-    const follows = userData.follows || 0
-    const liked = userData.liked || 0  // 获赞数
-    const collected = userData.collected || 0  // 被收藏数
-    const ndiscovery = userData.ndiscovery || 0  // 笔记数
+    const fans = parseInt(userData.fans) || 0
+    const follows = parseInt(userData.follows) || 0
+    const liked = parseInt(userData.liked) || 0  // 总获赞数
+    const collected = parseInt(userData.collected) || 0  // 总被收藏数
+    const ndiscovery = parseInt(userData.ndiscovery) || 0  // 笔记数
     const ipLocation = userData.ip_location || ''
     const redId = userData.red_id || ''
 
-    // 从interactions中获取数据（备用）
-    let interactionLikes = 0
-    if (userData.interactions) {
-      const interactionItem = userData.interactions.find((i: any) => i.type === 'interaction')
-      if (interactionItem) {
-        interactionLikes = interactionItem.count || 0
-      }
-    }
-
-    console.log(`[用户信息] 昵称:${nickname} 粉丝:${fans} 获赞:${liked} 笔记:${ndiscovery}`)
+    console.log(`[用户信息] 昵称:${nickname} 粉丝:${fans} 获赞:${liked} 收藏:${collected} 笔记:${ndiscovery}`)
 
     // ====== 2. 获取笔记列表 ======
     const notesResult = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', { userId })
@@ -82,20 +75,31 @@ export async function POST(request: NextRequest) {
     
     console.log(`[笔记列表] 获取到 ${notes.length} 篇笔记`)
 
-    // ====== 3. 处理笔记数据 ======
-    let totalLikes = 0
-    let totalCollects = 0
+    // ====== 3. 处理所有笔记数据 ======
+    let totalNoteLikes = 0
+    let totalNoteCollects = 0
+    let totalNoteComments = 0
+    let totalNoteViews = 0
     let savedNotes = 0
 
-    for (const note of notes.slice(0, 20)) {
+    // 处理所有笔记（不限制数量）
+    for (const note of notes) {
       const noteId = note.note_id || note.id || note.cursor
-      const likeCount = note.liked_count || note.likedCount || 0
-      const collectCount = note.collected_count || note.collectedCount || 0
+      
+      // 提取笔记数据
+      const likeCount = parseInt(note.liked_count) || parseInt(note.likedCount) || 0
+      const collectCount = parseInt(note.collected_count) || parseInt(note.collectedCount) || 0
+      const commentCount = parseInt(note.comment_count) || parseInt(note.commentCount) || 0
+      const viewCount = parseInt(note.view_count) || parseInt(note.viewCount) || 0
+      
       const title = note.display_title || note.title || note.desc || ''
       const noteType = note.type === 'video' ? '视频' : '图文'
+      const cover = note.cover?.url_default || note.cover?.url || ''
 
-      totalLikes += likeCount
-      totalCollects += collectCount
+      totalNoteLikes += likeCount
+      totalNoteCollects += collectCount
+      totalNoteComments += commentCount
+      totalNoteViews += viewCount
 
       // 保存到数据库
       if (noteId) {
@@ -106,32 +110,67 @@ export async function POST(request: NextRequest) {
           status: 'published',
           likes: likeCount,
           collects: collectCount,
+          comments: commentCount,
+          views: viewCount,
+          cover_url: cover,
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' })
 
-        if (!error) savedNotes++
+        if (!error) {
+          savedNotes++
+        } else {
+          console.error(`[笔记保存失败] ${noteId}:`, error.message)
+        }
       }
     }
 
-    // ====== 4. 保存周统计 ======
+    console.log(`[笔记统计] 点赞:${totalNoteLikes} 收藏:${totalNoteCollects} 评论:${totalNoteComments} 浏览:${totalNoteViews}`)
+    console.log(`[笔记保存] 成功保存 ${savedNotes}/${notes.length} 篇`)
+
+    // ====== 4. 获取上周数据计算增量 ======
     const today = new Date()
     const weekStart = getWeekStart(today)
     const weekEnd = getWeekEnd(today)
 
-    await supabase.from('weekly_stats').upsert({
+    // 查询上周数据
+    const { data: lastWeekData } = await supabase
+      .from('weekly_stats')
+      .select('followers')
+      .lt('week_start', weekStart)
+      .order('week_start', { ascending: false })
+      .limit(1)
+      .single()
+
+    const lastFollowers = lastWeekData?.followers || fans
+    const newFollowers = Math.max(0, fans - lastFollowers)
+
+    console.log(`[增量计算] 上周粉丝:${lastFollowers} 本周粉丝:${fans} 新增:${newFollowers}`)
+
+    // ====== 5. 保存周统计 ======
+    const weeklyData = {
       week_start: weekStart,
       week_end: weekEnd,
       followers: fans,
-      new_followers: 0,
-      likes: liked || interactionLikes,
-      saves: collected,
-      comments: 0,
-      views: 0,
+      new_followers: newFollowers,
+      likes: liked,           // 用户总获赞
+      saves: collected,       // 用户总被收藏
+      comments: totalNoteComments,  // 笔记评论总和
+      views: totalNoteViews,        // 笔记浏览总和（如果API没返回则为0）
       posts_count: ndiscovery || notes.length,
-      female_ratio: 0
-    }, { onConflict: 'week_start' })
+      female_ratio: 85  // 默认值，需要从其他渠道获取
+    }
 
-    console.log('[同步完成]')
+    console.log('[周统计数据]', JSON.stringify(weeklyData))
+
+    const { error: statsError } = await supabase
+      .from('weekly_stats')
+      .upsert(weeklyData, { onConflict: 'week_start' })
+
+    if (statsError) {
+      console.error('[周统计保存失败]', statsError)
+    } else {
+      console.log('[周统计保存成功]')
+    }
 
     return NextResponse.json({
       success: true,
@@ -145,7 +184,14 @@ export async function POST(request: NextRequest) {
         totalLikes: liked,
         totalCollected: collected,
         notesCount: ndiscovery || notes.length,
-        savedNotes
+        savedNotes,
+        newFollowers,
+        noteStats: {
+          likes: totalNoteLikes,
+          collects: totalNoteCollects,
+          comments: totalNoteComments,
+          views: totalNoteViews
+        }
       }
     })
 
