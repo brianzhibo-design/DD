@@ -26,15 +26,15 @@ const seasons = [
 ];
 
 const difficultyConfig = {
-  '简单': { color: 'bg-green-100 text-green-700', icon: '🟢' },
-  '中等': { color: 'bg-yellow-100 text-yellow-700', icon: '🟡' },
-  '复杂': { color: 'bg-red-100 text-red-700', icon: '🔴' },
+  '简单': { color: 'bg-emerald-50 text-emerald-600', icon: '' },
+  '中等': { color: 'bg-amber-50 text-amber-600', icon: '' },
+  '复杂': { color: 'bg-red-50 text-red-600', icon: '' },
 };
 
 const potentialConfig = {
-  '高': { color: 'bg-rose-100 text-rose-700', stars: 3 },
-  '中': { color: 'bg-amber-100 text-amber-700', stars: 2 },
-  '低': { color: 'bg-gray-100 text-gray-700', stars: 1 },
+  '高': { color: 'bg-slate-900 text-white', stars: 3 },
+  '中': { color: 'bg-slate-100 text-slate-700', stars: 2 },
+  '低': { color: 'bg-slate-50 text-slate-500', stars: 1 },
 };
 
 export default function TopicsPage() {
@@ -109,26 +109,26 @@ export default function TopicsPage() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-          <Lightbulb size={24} className="text-amber-500" />
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+          <Lightbulb size={22} className="text-slate-600" />
           AI话题推荐
         </h1>
-        <p className="text-gray-500">基于账号定位，智能生成爆款选题</p>
+        <p className="text-slate-500 text-sm">基于账号定位，智能生成爆款选题</p>
       </div>
       
       {/* Controls */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+      <div className="bg-white rounded-xl p-5 border border-slate-100 mb-5">
         <div className="flex flex-wrap items-end gap-4">
           {/* Category Select */}
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-slate-500 mb-2">
               内容类型
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/5 focus:border-slate-400 bg-white text-sm"
             >
               {categories.map(cat => (
                 <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -138,13 +138,13 @@ export default function TopicsPage() {
           
           {/* Season Select */}
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-slate-500 mb-2">
               季节
             </label>
             <select
               value={season}
               onChange={(e) => setSeason(e.target.value)}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white"
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900/5 focus:border-slate-400 bg-white text-sm"
             >
               {seasons.map(s => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -156,7 +156,7 @@ export default function TopicsPage() {
           <button
             onClick={generateTopics}
             disabled={isGenerating}
-            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 font-medium"
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-black text-white rounded-lg transition-colors disabled:opacity-50 font-medium shadow-lg shadow-slate-200"
           >
             {isGenerating ? (
               <>
@@ -190,7 +190,7 @@ export default function TopicsPage() {
             return (
               <div 
                 key={index}
-                className="bg-white rounded-xl p-5 shadow-sm border hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl p-5 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all"
               >
                 {/* Badges */}
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -207,28 +207,28 @@ export default function TopicsPage() {
                       <Star key={i} size={14} className="text-amber-400 fill-amber-400" />
                     ))}
                     {Array.from({ length: 3 - potential.stars }).map((_, i) => (
-                      <Star key={i} size={14} className="text-gray-200" />
+                      <Star key={i} size={14} className="text-slate-200" />
                     ))}
                   </div>
                 </div>
                 
                 {/* Title */}
-                <h3 className="font-bold text-gray-800 text-lg mb-3 leading-snug">
+                <h3 className="font-bold text-slate-900 text-lg mb-3 leading-snug">
                   {topic.title}
                 </h3>
                 
                 {/* Reason */}
-                <p className="text-sm text-gray-600 mb-3 bg-amber-50 rounded-lg p-3 border border-amber-100">
+                <p className="text-sm text-slate-600 mb-3 bg-slate-50 rounded-lg p-3 border border-slate-100">
                   {topic.reason}
                 </p>
                 
                 {/* Outline */}
-                <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                  <p className="text-xs text-gray-500 mb-2 font-medium">内容大纲</p>
-                  <ul className="text-sm text-gray-600 space-y-1">
+                <div className="bg-slate-50 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-slate-500 mb-2 font-medium">内容大纲</p>
+                  <ul className="text-sm text-slate-600 space-y-1">
                     {(Array.isArray(topic.outline) ? topic.outline : [topic.outline]).map((item, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <span className="text-amber-500 mt-0.5">•</span>
+                        <span className="text-slate-400 mt-0.5">•</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -238,7 +238,7 @@ export default function TopicsPage() {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mb-4">
                   {topic.tags.map(tag => (
-                    <span key={tag} className="text-xs text-gray-400">
+                    <span key={tag} className="text-xs text-slate-400">
                       #{tag}
                     </span>
                   ))}

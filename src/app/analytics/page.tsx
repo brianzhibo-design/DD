@@ -212,25 +212,25 @@ export default function AnalyticsPage() {
       {/* 顶部导航区 */}
       <div className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
-            <BarChart3 className="text-pink-500 w-8 h-8" />
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <BarChart3 className="text-slate-600 w-6 h-6" />
             数据分析
           </h1>
-          <p className="text-slate-500 mt-1">深度追踪运营趋势，驱动内容增长</p>
+          <p className="text-slate-500 text-sm mt-1">深度追踪运营趋势，驱动内容增长</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2.5 px-5 rounded-xl disabled:opacity-50 transition-all shadow-lg shadow-green-200"
+            className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium py-2.5 px-4 rounded-lg disabled:opacity-50 transition-all text-sm"
           >
             <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? '同步中...' : '同步小红书'}
+            {syncing ? '同步中...' : '同步'}
           </button>
           
           <button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 bg-pink-500 hover:bg-pink-600 active:scale-95 transition-all text-white font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-pink-200"
+            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-black active:scale-95 transition-all text-white font-medium py-2.5 px-4 rounded-lg shadow-lg shadow-slate-200 text-sm"
           >
             <Plus size={18} />
             手动录入
@@ -268,7 +268,7 @@ export default function AnalyticsPage() {
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-lg flex items-center gap-2">
-                <PieChart className="text-pink-500" size={20} />
+                <PieChart className="text-slate-600" size={18} />
                 效率评估
               </h3>
               <span className="text-xs text-slate-400 font-medium px-2 py-1 bg-slate-50 rounded-md">最新一周期</span>
@@ -292,7 +292,7 @@ export default function AnalyticsPage() {
           {/* 性别比例可视化 */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
             <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
-              <Users className="text-pink-500" size={20} />
+              <Users className="text-slate-600" size={18} />
               粉丝性别画像
             </h3>
             <div className="flex items-center gap-4 h-24">
