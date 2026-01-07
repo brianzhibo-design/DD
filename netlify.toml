@@ -2,10 +2,9 @@
   command = "npm run build"
   publish = ".next"
 
-# 函数配置 (Netlify Pro)
+# 函数配置 (Netlify Pro - 最长26秒超时)
 [functions]
   node_bundler = "esbuild"
-  # Pro 版最大超时时间 26 秒
   external_node_modules = ["@anthropic-ai/sdk"]
 
 [[plugins]]
