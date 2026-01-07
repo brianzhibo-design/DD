@@ -2,10 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchUserInfo, fetchUserNotes, fetchNoteDetail, parseCount, XHSUserInfo, XHSNote } from '@/lib/xhs-api'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// CORS 配置
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+// 获取 Supabase 客户端
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return null
+  return createClient(url, key)
+}
+
+// OPTIONS 预检请求
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +29,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         success: false, 
         error: '未配置小红书用户ID (XHS_USER_ID)' 
-      }, { status: 500 })
+      }, { status: 500, headers: corsHeaders })
+    }
+
+    const supabase = getSupabase()
+    if (!supabase) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Supabase 未配置' 
+      }, { status: 500, headers: corsHeaders })
     }
 
     console.log('[Sync] 开始同步小红书数据, userId:', userId)
@@ -66,7 +89,7 @@ export async function POST(request: NextRequest) {
       totalComments: 0
     }
 
-    for (const note of notes.slice(0, 10)) { // 最多处理10篇，避免API调用过多
+    for (const note of notes.slice(0, 10)) { // 最多处理10篇
       try {
         const noteId = note.noteId || note.id
         const xsecToken = note.xsecToken || ''
@@ -78,7 +101,6 @@ export async function POST(request: NextRequest) {
         if (xsecToken) {
           try {
             detail = await fetchNoteDetail(noteId, xsecToken)
-            // 避免请求过快
             await new Promise(r => setTimeout(r, 500))
           } catch (e) {
             console.error('[Sync] 获取笔记详情失败:', noteId)
@@ -123,13 +145,13 @@ export async function POST(request: NextRequest) {
       week_start: weekStart,
       week_end: weekEnd,
       followers: followers,
-      new_followers: 0, // API不提供增量
+      new_followers: 0,
       likes: totalLikes || noteStats.totalNoteLikes,
       saves: totalCollects || noteStats.totalNoteCollects,
       comments: noteStats.totalComments,
       views: noteStats.totalViews,
       posts_count: notes.length,
-      female_ratio: 0, // 需要粉丝画像接口
+      female_ratio: 0,
     }
 
     await supabase.from('weekly_stats').upsert(weeklyData, { 
@@ -150,16 +172,18 @@ export async function POST(request: NextRequest) {
         totalComments: noteStats.totalComments,
         totalViews: noteStats.totalViews
       }
-    })
+    }, { headers: corsHeaders })
 
   } catch (error: unknown) {
     console.error('[Sync] 同步失败:', error)
     const message = error instanceof Error ? error.message : '同步失败'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    return NextResponse.json({ 
+      success: false, 
+      error: message 
+    }, { status: 500, headers: corsHeaders })
   }
 }
 
-// 获取本周开始日期
 function getWeekStart(date: Date): string {
   const d = new Date(date)
   const day = d.getDay()
@@ -168,14 +192,12 @@ function getWeekStart(date: Date): string {
   return d.toISOString().split('T')[0]
 }
 
-// 获取本周结束日期
 function getWeekEnd(date: Date): string {
   const start = new Date(getWeekStart(date))
   start.setDate(start.getDate() + 6)
   return start.toISOString().split('T')[0]
 }
 
-// 映射笔记类型
 function mapNoteType(type?: string): string {
   if (!type) return '其他'
   if (type.includes('video')) return '视频'
@@ -183,7 +205,6 @@ function mapNoteType(type?: string): string {
   return '其他'
 }
 
-// GET请求用于测试配置
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
@@ -191,6 +212,5 @@ export async function GET() {
       oneapiKey: !!process.env.ONEAPI_KEY,
       xhsUserId: !!process.env.XHS_USER_ID
     }
-  })
+  }, { headers: corsHeaders })
 }
-
