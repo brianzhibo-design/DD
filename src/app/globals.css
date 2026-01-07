@@ -26,7 +26,18 @@
   --color-warning: #C5A267;
   --color-danger: #B85C5C;
   
-  /* ===== 字体 ===== */
+  /* ===== 响应式间距 (Mobile First) ===== */
+  --spacing-page: 16px;
+  --spacing-card: 16px;
+  --spacing-section: 16px;
+  
+  /* ===== 响应式字体 (Mobile First) ===== */
+  --font-page-title: 20px;
+  --font-card-title: 16px;
+  --font-body: 14px;
+  --font-caption: 12px;
+  
+  /* ===== 字体族 ===== */
   --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: 'Lexend', 'Noto Sans SC', sans-serif;
   --font-serif: 'ZCOOL XiaoWei', serif;
@@ -42,6 +53,29 @@
   --shadow-soft: 0 8px 30px rgb(0 0 0 / 0.04);
   --shadow-float: 0 20px 50px rgba(45, 75, 62, 0.1);
   --shadow-button: 0 4px 15px rgba(45, 75, 62, 0.2);
+}
+
+/* ===== 平板端 (≥768px) ===== */
+@media (min-width: 768px) {
+  :root {
+    --spacing-page: 24px;
+    --spacing-card: 20px;
+    --spacing-section: 24px;
+    
+    --font-page-title: 24px;
+    --font-card-title: 18px;
+    --font-body: 16px;
+    --font-caption: 14px;
+  }
+}
+
+/* ===== 桌面端 (≥1024px) ===== */
+@media (min-width: 1024px) {
+  :root {
+    --spacing-page: 32px;
+    --spacing-card: 24px;
+    --spacing-section: 32px;
+  }
 }
 
 @theme inline {
