@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Settings, Database, Key, AlertTriangle, CheckCircle, XCircle, RefreshCw, Bot, Zap, Camera, User } from 'lucide-react';
 import { testSupabaseConnection } from '@/lib/db';
-import { getUserProfile, saveUserProfile, compressImage, UserProfile } from '@/lib/user-profile';
+import { getUserProfile, saveUserProfile, compressImage, UserProfile, loadUserProfile } from '@/lib/user-profile';
 
 interface ApiStatus {
   success: boolean;
@@ -71,9 +71,16 @@ export default function SettingsPage() {
 
   // 加载用户资料
   useEffect(() => {
-    const profile = getUserProfile();
-    setUserProfile(profile);
-    setNickname(profile.nickname || '');
+    // 先显示缓存
+    const cached = getUserProfile();
+    setUserProfile(cached);
+    setNickname(cached.nickname || '');
+    
+    // 然后从 Supabase 加载
+    loadUserProfile().then(profile => {
+      setUserProfile(profile);
+      setNickname(profile.nickname || '');
+    });
   }, []);
   
   useEffect(() => {
@@ -98,19 +105,27 @@ export default function SettingsPage() {
     try {
       const base64 = await compressImage(file, 150);
       const updated = { ...userProfile, avatar: base64 };
-      saveUserProfile(updated);
-      setUserProfile(updated);
+      const success = await saveUserProfile(updated);
+      if (success) {
+        setUserProfile(updated);
+      } else {
+        alert('保存失败，请重试');
+      }
     } catch {
       alert('图片处理失败');
     }
   };
 
   // 保存昵称
-  const handleSaveNickname = () => {
+  const handleSaveNickname = async () => {
     const updated = { ...userProfile, nickname };
-    saveUserProfile(updated);
-    setUserProfile(updated);
-    alert('昵称已保存');
+    const success = await saveUserProfile(updated);
+    if (success) {
+      setUserProfile(updated);
+      alert('昵称已保存');
+    } else {
+      alert('保存失败，请重试');
+    }
   };
   
   return (

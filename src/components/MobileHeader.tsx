@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Palmtree, Sparkles } from 'lucide-react';
-import { getUserProfile, UserProfile } from '@/lib/user-profile';
+import { getUserProfile, UserProfile, loadUserProfile } from '@/lib/user-profile';
 
 const pageNames: Record<string, string> = {
   '/': '首页',
@@ -22,10 +22,11 @@ export default function MobileHeader() {
 
   useEffect(() => {
     setUserProfile(getUserProfile());
+    loadUserProfile().then(setUserProfile);
     
     const interval = setInterval(() => {
       setUserProfile(getUserProfile());
-    }, 2000);
+    }, 3000);
     
     return () => clearInterval(interval);
   }, []);

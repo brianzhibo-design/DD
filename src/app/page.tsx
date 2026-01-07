@@ -10,7 +10,7 @@ import {
 import { getLatestWeeklyStat } from '@/lib/db';
 import { WeeklyStat } from '@/lib/supabase';
 import { initialCats } from '@/data/cats';
-import { getUserProfile, UserProfile } from '@/lib/user-profile';
+import { getUserProfile, UserProfile, loadUserProfile } from '@/lib/user-profile';
 
 export default function Home() {
   const [weeklyData, setWeeklyData] = useState<WeeklyStat | null>(null);
@@ -20,6 +20,7 @@ export default function Home() {
   useEffect(() => {
     loadData();
     setUserProfile(getUserProfile());
+    loadUserProfile().then(setUserProfile);
   }, []);
 
   const loadData = async () => {

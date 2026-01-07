@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Cat, BarChart3, Lightbulb, MessageCircle, Settings, Sparkles, Palmtree, Target, X, User } from 'lucide-react';
-import { getUserProfile, UserProfile } from '@/lib/user-profile';
+import { getUserProfile, UserProfile, loadUserProfile } from '@/lib/user-profile';
 
 const navItems = [
   { href: '/', label: '首页', icon: Home },
@@ -25,23 +25,18 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const [userProfile, setUserProfile] = useState<UserProfile>({});
 
   useEffect(() => {
+    // 先显示缓存
     setUserProfile(getUserProfile());
     
-    // 监听 localStorage 变化
-    const handleStorage = () => {
-      setUserProfile(getUserProfile());
-    };
-    window.addEventListener('storage', handleStorage);
+    // 从 Supabase 加载
+    loadUserProfile().then(setUserProfile);
     
     // 定时刷新（处理同页面更新）
     const interval = setInterval(() => {
       setUserProfile(getUserProfile());
-    }, 2000);
+    }, 3000);
     
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
   
   return (
