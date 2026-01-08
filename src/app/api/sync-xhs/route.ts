@@ -21,7 +21,7 @@ function getSupabase() {
   return createClient(url, key)
 }
 
-// 带重试的 API 请求（最多5次，只有 code=200 计费）
+// 带重试的 API 请求（最多重试，只有 code=200 计费）
 async function oneApiRequest(
   endpoint: string, 
   body: object, 
@@ -41,20 +41,17 @@ async function oneApiRequest(
   for (const ep of endpoints) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 55000) // 55秒超时
+        const url = ONEAPI_BASE + ep
 
-        const response = await fetch(`${ONEAPI_BASE}${ep}`, {
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
-          body: JSON.stringify(body),
-          signal: controller.signal
+          body: JSON.stringify(body)
         })
 
-        clearTimeout(timeout)
         const result = await response.json()
         
         // 成功
@@ -80,11 +77,7 @@ async function oneApiRequest(
         }
 
       } catch (error: any) {
-        if (error.name === 'AbortError') {
-          lastError = new Error('请求超时，请重试')
-        } else {
-          lastError = error
-        }
+        lastError = error
         console.warn(`[OneAPI] ${ep} 尝试 ${attempt}/${maxRetries} 异常:`, error.message)
         
         if (attempt < maxRetries) {
