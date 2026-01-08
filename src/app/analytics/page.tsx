@@ -451,7 +451,7 @@ export default function AnalyticsPage() {
                   </span>
                 </div>
                 <div className="text-xs text-[#9BA8A3] mt-1">
-                  {note.type} · {note.publish_date || '-'}
+                  {note.type} · {note.publish_time ? new Date(note.publish_time).toLocaleDateString('zh-CN') : '-'}
                 </div>
               </div>
             </div>
