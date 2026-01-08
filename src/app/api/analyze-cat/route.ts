@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { description, catName } = await request.json();
     
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       messages: [{ 
         role: "user", 
