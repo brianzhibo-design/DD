@@ -17,7 +17,8 @@ import {
   EyeOff,
   Save,
   Type,
-  Check
+  Check,
+  Wallet
 } from 'lucide-react';
 import { testSupabaseConnection } from '@/lib/db';
 import { getUserProfile, UserProfile, loadUserProfile, saveUserProfile, compressImage } from '@/lib/user-profile';
@@ -52,10 +53,29 @@ export default function SettingsPage() {
 
   const [selectedFont, setSelectedFont] = useState('modern');
 
+  // OneAPI 余额
+  const [balance, setBalance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+
   useEffect(() => {
     checkConnections();
     loadProfile();
+    fetchBalance();
   }, []);
+
+  const fetchBalance = async () => {
+    setLoadingBalance(true);
+    try {
+      const res = await fetch('/api/balance');
+      const data = await res.json();
+      if (data.success) {
+        setBalance(data.balance);
+      }
+    } catch (error) {
+      console.error('获取余额失败:', error);
+    }
+    setLoadingBalance(false);
+  };
 
   const loadProfile = async () => {
     const profile = await loadUserProfile();
@@ -327,6 +347,47 @@ export default function SettingsPage() {
               )}
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* OneAPI Balance */}
+      <div className="bg-white border border-[#2D4B3E]/5 rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-[#2D4B3E]" />
+            <h2 className="font-bold text-[#2D4B3E] font-serif">OneAPI 余额</h2>
+          </div>
+          <button
+            onClick={fetchBalance}
+            disabled={loadingBalance}
+            className="text-sm text-[#6B7A74] hover:text-[#2D4B3E] flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={loadingBalance ? 'animate-spin' : ''} />
+            刷新
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-6">
+          <div className="flex-1 p-6 bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl">
+            <p className="text-sm text-[#6B7A74] mb-1">可用余额</p>
+            <p className="text-3xl font-bold text-emerald-600">
+              {loadingBalance ? (
+                <span className="text-[#6B7A74] text-lg">加载中...</span>
+              ) : balance !== null ? (
+                `¥${balance.toFixed(2)}`
+              ) : (
+                <span className="text-red-500 text-lg">获取失败</span>
+              )}
+            </p>
+          </div>
+          <div className="text-sm text-[#6B7A74] max-w-[200px]">
+            <p className="mb-2">💡 余额用于：</p>
+            <ul className="space-y-1 text-xs">
+              <li>• 小红书数据同步</li>
+              <li>• 笔记详情获取</li>
+              <li>• 评论数据抓取</li>
+            </ul>
+          </div>
         </div>
       </div>
 
