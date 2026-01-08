@@ -143,7 +143,8 @@ export async function POST(request: NextRequest) {
     let totalComments = 0
 
     for (const note of notes) {
-      const noteId = note.id || note.note_id || note.cursor
+      // OneAPI 返回的笔记列表中，cursor 是正确的 noteId
+      const noteId = note.cursor || note.id || note.note_id
       if (!noteId) continue
 
       const likes = parseInt(note.likes) || parseInt(note.liked_count) || 0
