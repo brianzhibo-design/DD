@@ -235,9 +235,9 @@ export default function NoteDetailModal({ noteId, onClose }: NoteDetailModalProp
               {/* 话题标签 */}
               {note.hash_tags && note.hash_tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {note.hash_tags.slice(0, 10).map((tag, idx) => (
+                  {note.hash_tags.slice(0, 10).map((tag: any, idx: number) => (
                     <span key={idx} className="px-3 py-1 bg-[#2D4B3E]/5 text-[#2D4B3E] text-sm rounded-full">
-                      #{tag.name || tag}
+                      #{typeof tag === 'string' ? tag : (tag.name || '')}
                     </span>
                   ))}
                 </div>
