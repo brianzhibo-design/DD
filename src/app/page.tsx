@@ -7,6 +7,7 @@ import {
   RefreshCw, ArrowUpRight, MapPin, Clock, Settings,
   Sparkles
 } from 'lucide-react'
+import NoteDetailModal from '@/components/NoteDetailModal'
 
 interface AccountInfo {
   nickname: string
@@ -60,6 +61,7 @@ export default function HomePage() {
   const [recentComments, setRecentComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
 
   const loadData = async () => {
     try {
@@ -396,7 +398,8 @@ export default function HomePage() {
             {topNotes.length > 0 ? topNotes.slice(0, 5).map((note, index) => (
               <div 
                 key={note.id}
-                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F6F0] transition-colors"
+                onClick={() => setSelectedNoteId(note.id)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F6F0] transition-colors cursor-pointer"
               >
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                   index < 3 ? 'bg-[#2D4B3E] text-white' : 'bg-[#F4F6F0] text-[#6B7A74]'
@@ -503,6 +506,12 @@ export default function HomePage() {
           * 根据小红书平台特征估算，精准数据需通过蒲公英后台获取
         </p>
       </div>
+
+      {/* 笔记详情弹窗 */}
+      <NoteDetailModal 
+        noteId={selectedNoteId} 
+        onClose={() => setSelectedNoteId(null)} 
+      />
     </div>
   )
 }

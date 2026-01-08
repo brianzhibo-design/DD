@@ -7,6 +7,7 @@ import {
   ArrowDownRight, BarChart3, Plus, X, Save, Upload,
   Camera, Sparkles, Image as ImageIcon, Loader2
 } from 'lucide-react'
+import NoteDetailModal from '@/components/NoteDetailModal'
 
 interface WeeklyStats {
   id?: string
@@ -64,6 +65,9 @@ export default function AnalyticsPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // 笔记详情弹窗
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
 
   const loadData = async () => {
     try {
@@ -414,7 +418,8 @@ export default function AnalyticsPage() {
           {notes.length > 0 ? notes.slice(0, 12).map((note) => (
             <div 
               key={note.id}
-              className="flex gap-3 p-4 rounded-xl border border-[#2D4B3E]/5 hover:border-[#2D4B3E]/15 transition-colors bg-[#FDFBF7]"
+              onClick={() => setSelectedNoteId(note.id)}
+              className="flex gap-3 p-4 rounded-xl border border-[#2D4B3E]/5 hover:border-[#2D4B3E]/15 hover:shadow-md transition-all cursor-pointer bg-[#FDFBF7]"
             >
               {note.cover_image ? (
                 <img 
@@ -689,6 +694,12 @@ export default function AnalyticsPage() {
           </div>
         </div>
       )}
+
+      {/* 笔记详情弹窗 */}
+      <NoteDetailModal 
+        noteId={selectedNoteId} 
+        onClose={() => setSelectedNoteId(null)} 
+      />
     </div>
   )
 }
