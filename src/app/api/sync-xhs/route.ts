@@ -192,8 +192,8 @@ export async function GET() {
       supabase
         .from('account_info')
         .select('*')
-        .eq('id', 'main')
-        .single(),
+        .order('updated_at', { ascending: false })
+        .limit(1),
       supabase
         .from('notes')
         .select('*')
@@ -207,11 +207,12 @@ export async function GET() {
     ])
 
     // 调试日志
-    console.log('[GET] account_info:', accountRes.error?.message || `找到 ${accountRes.data ? 1 : 0} 条`)
+    console.log('[GET] account_info error:', accountRes.error?.message || 'none')
+    console.log('[GET] account_info data:', accountRes.data?.length || 0, '条')
     console.log('[GET] notes:', notesRes.error?.message || `找到 ${notesRes.data?.length || 0} 条`)
 
-    // 使用 single() 返回的是单个对象，不是数组
-    const account = accountRes.data || null
+    // 获取第一条账号记录
+    const account = accountRes.data?.[0] || null
 
     // 转换笔记数据字段名以匹配前端
     const topNotes = (notesRes.data || []).map((note: any) => ({
