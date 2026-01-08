@@ -96,8 +96,12 @@ export async function POST() {
       const params: any = { userId: XHS_USER_ID }
       if (cursor) params.cursor = cursor
       
+      console.log(`[sync-xhs] 第 ${pageCount + 1} 页, cursor: ${cursor || '无'}`)
+      
       const notesResult = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', params)
       const pageNotes = notesResult.notes || []
+      
+      console.log(`[sync-xhs] 获取 ${pageNotes.length} 条, has_more: ${notesResult.has_more}`)
       
       if (pageNotes.length === 0) break
       
@@ -111,9 +115,12 @@ export async function POST() {
       const lastNote = pageNotes[pageNotes.length - 1]
       const nextCursor = lastNote?.cursor || lastNote?.id
       
+      console.log(`[sync-xhs] nextCursor: ${nextCursor}`)
+      
       if (hasMore && nextCursor && pageNotes.length >= 20) {
         cursor = nextCursor
       } else {
+        console.log(`[sync-xhs] 停止分页: hasMore=${hasMore}, nextCursor=${!!nextCursor}, len=${pageNotes.length}`)
         break // 没有更多数据
       }
       
