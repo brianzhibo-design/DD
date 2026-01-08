@@ -58,25 +58,29 @@ export async function POST() {
       const userData = await oneApiRequest('/api/xiaohongshu/fetch_user_data_v4', { userId })
       const user = userData.data || userData
 
+      // 使用旧表结构字段名
       const accountData = {
-        user_id: userId,
+        id: 'main',  // 使用固定 ID 方便 upsert
         nickname: user.nickname || '未知',
         avatar: user.images || '',
         red_id: user.red_id || '',
         description: user.desc || '',
         ip_location: user.ip_location || '',
-        followers: parseInt(user.fans) || 0,
-        following: parseInt(user.follows) || 0,
+        fans: parseInt(user.fans) || 0,
+        follows: parseInt(user.follows) || 0,
         total_likes: parseInt(user.liked) || 0,
-        total_collects: parseInt(user.collected) || 0,
+        total_collected: parseInt(user.collected) || 0,
         notes_count: parseInt(user.ndiscovery) || 0,
-        synced_at: now
+        updated_at: now
       }
 
-      const { error } = await supabase.from('account_info').insert(accountData)
-      if (!error) accountSaved = true
-      
-      console.log(`[账号信息] ${accountData.nickname} | 粉丝:${accountData.followers}`)
+      const { error } = await supabase.from('account_info').upsert(accountData, { onConflict: 'id' })
+      if (error) {
+        console.error('[账号信息] 保存失败:', error.message, error.details, error.hint)
+      } else {
+        accountSaved = true
+        console.log(`[账号信息] 保存成功: ${accountData.nickname} | 粉丝:${accountData.fans}`)
+      }
     } catch (e: any) {
       console.error('[账号信息] 获取失败:', e.message)
     }
@@ -89,22 +93,23 @@ export async function POST() {
       console.log(`[笔记列表] 获取到 ${notes.length} 篇笔记`)
 
       if (notes.length > 0) {
+        // 使用旧表结构字段名
         const notesInsert = notes.map((note: any) => ({
-          note_id: note.cursor || note.id || note.note_id,
+          id: note.cursor || note.id || note.note_id,
           title: note.display_title || note.title || note.desc?.substring(0, 100) || '',
-          cover: note.images_list?.[0]?.url_size_large || 
-                 note.images_list?.[0]?.url || 
-                 note.cover?.url_default || '',
+          cover_image: note.images_list?.[0]?.url_size_large || 
+                       note.images_list?.[0]?.url || 
+                       note.cover?.url_default || '',
           likes: parseInt(note.likes) || parseInt(note.liked_count) || 0,
           collects: parseInt(note.collected_count) || 0,
           comments: parseInt(note.comments_count) || 0,
           type: note.type === 'video' ? '视频' : '图文',
-          publish_time: note.time ? new Date(note.time * 1000).toISOString() : null,
-          synced_at: now
+          publish_date: note.time_desc || null,
+          updated_at: now
         }))
 
         const { error } = await supabase.from('notes').upsert(notesInsert, { 
-          onConflict: 'note_id',
+          onConflict: 'id',
           ignoreDuplicates: false 
         })
         
@@ -193,33 +198,19 @@ export async function GET() {
     console.log('[GET] account_info:', accountRes.error?.message || `找到 ${accountRes.data?.length || 0} 条`)
     console.log('[GET] notes:', notesRes.error?.message || `找到 ${notesRes.data?.length || 0} 条`)
 
-    // 转换账号数据字段名以匹配前端期望（兼容新旧表结构）
-    const dbAccount = accountRes.data?.[0]
-    const account = dbAccount ? {
-      nickname: dbAccount.nickname,
-      red_id: dbAccount.red_id || dbAccount.user_id || '',
-      avatar: dbAccount.avatar || dbAccount.images || '',
-      description: dbAccount.description || dbAccount.desc || '',
-      ip_location: dbAccount.ip_location || '',
-      // 兼容新旧字段名
-      fans: dbAccount.followers || dbAccount.fans || 0,
-      follows: dbAccount.following || dbAccount.follows || 0,
-      total_likes: dbAccount.total_likes || dbAccount.liked || 0,
-      total_collected: dbAccount.total_collects || dbAccount.total_collected || dbAccount.collected || 0,
-      notes_count: dbAccount.notes_count || dbAccount.ndiscovery || 0,
-      updated_at: dbAccount.synced_at || dbAccount.updated_at || ''
-    } : null
+    // 直接使用数据库返回的数据（旧表结构）
+    const account = accountRes.data?.[0] || null
 
-    // 转换笔记数据以兼容前端期望的字段名
+    // 转换笔记数据字段名以匹配前端
     const topNotes = (notesRes.data || []).map((note: any) => ({
-      note_id: note.note_id || note.id,
+      note_id: note.id,
       title: note.title || '',
       type: note.type || '图文',
       likes: note.likes || 0,
-      collects: note.collects || note.collected_count || 0,
-      comments: note.comments || note.comments_count || 0,
-      cover: note.cover || note.cover_image || '',
-      publish_time: note.publish_time || note.publish_date || ''
+      collects: note.collects || 0,
+      comments: note.comments || 0,
+      cover: note.cover_image || '',
+      publish_time: note.publish_date || ''
     }))
 
     return NextResponse.json({
