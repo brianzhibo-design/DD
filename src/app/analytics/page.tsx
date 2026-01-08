@@ -25,15 +25,14 @@ interface WeeklyStats {
 }
 
 interface Note {
-  id: string
+  note_id: string
   title: string
   type: string
   likes: number
   collects: number
   comments: number
-  shares: number
-  cover_image: string
-  publish_date: string
+  cover: string
+  publish_time: string
 }
 
 const emptyWeeklyData: WeeklyStats = {
@@ -417,13 +416,13 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {notes.length > 0 ? notes.slice(0, 12).map((note) => (
             <div 
-              key={note.id}
-              onClick={() => setSelectedNoteId(note.id)}
+              key={note.note_id}
+              onClick={() => setSelectedNoteId(note.note_id)}
               className="flex gap-3 p-4 rounded-xl border border-[#2D4B3E]/5 hover:border-[#2D4B3E]/15 hover:shadow-md transition-all cursor-pointer bg-[#FDFBF7]"
             >
-              {note.cover_image ? (
+              {note.cover ? (
                 <img 
-                  src={note.cover_image} 
+                  src={note.cover} 
                   alt={note.title}
                   className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                 />

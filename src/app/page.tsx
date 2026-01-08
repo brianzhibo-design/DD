@@ -33,32 +33,21 @@ interface WeeklyStats {
 }
 
 interface Note {
-  id: string
+  note_id: string
   title: string
   type: string
   likes: number
   collects: number
   comments: number
-  shares: number
-  cover_image: string
-  publish_date: string
+  cover: string
+  publish_time: string
 }
 
-interface Comment {
-  id: string
-  user_nickname: string
-  user_avatar: string
-  content: string
-  like_count: number
-  ip_location: string
-  created_at: string
-}
 
 export default function HomePage() {
   const [account, setAccount] = useState<AccountInfo | null>(null)
   const [stats, setStats] = useState<WeeklyStats | null>(null)
   const [topNotes, setTopNotes] = useState<Note[]>([])
-  const [recentComments, setRecentComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
@@ -71,7 +60,6 @@ export default function HomePage() {
         setAccount(data.data.account)
         setStats(data.data.latestStats)
         setTopNotes(data.data.topNotes || [])
-        setRecentComments(data.data.recentComments || [])
       }
     } catch (e) {
       console.error('加载失败:', e)
@@ -95,26 +83,6 @@ export default function HomePage() {
       }
     } catch (e: any) {
       alert('❌ 同步失败: ' + e.message)
-    }
-    setSyncing(false)
-  }
-
-  const syncDetails = async () => {
-    setSyncing(true)
-    try {
-      const res = await fetch('/api/sync-detail', { method: 'POST' })
-      const data = await res.json()
-      if (data.success) {
-        await loadData()
-        const duration = data.data?.duration || ''
-        const processed = data.data?.processedNotes || 0
-        const comments = data.data?.savedComments || 0
-        alert(`✅ 详情同步完成！${duration ? `(${duration})` : ''}\n\n处理笔记: ${processed} 篇\n新增评论: ${comments} 条`)
-      } else {
-        alert('❌ 详情同步失败: ' + data.error)
-      }
-    } catch (e: any) {
-      alert('❌ 详情同步失败: ' + e.message)
     }
     setSyncing(false)
   }
@@ -245,14 +213,6 @@ export default function HomePage() {
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? '同步中...' : '同步'}
-            </button>
-            <button
-              onClick={syncDetails}
-              disabled={syncing}
-              className="px-3 py-2.5 bg-white border border-[#2D4B3E]/20 text-[#2D4B3E] rounded-full hover:bg-[#F4F6F0] disabled:opacity-50 transition-all text-xs font-medium"
-              title="同步笔记详情和评论"
-            >
-              详情
             </button>
           </div>
         </div>
@@ -397,8 +357,8 @@ export default function HomePage() {
           <div className="space-y-2">
             {topNotes.length > 0 ? topNotes.slice(0, 5).map((note, index) => (
               <div 
-                key={note.id}
-                onClick={() => setSelectedNoteId(note.id)}
+                key={note.note_id}
+                onClick={() => setSelectedNoteId(note.note_id)}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F6F0] transition-colors cursor-pointer"
               >
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -408,8 +368,8 @@ export default function HomePage() {
                 </div>
                 
                 <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#F4F6F0]">
-                  {note.cover_image ? (
-                    <img src={note.cover_image} alt={note.title} className="w-full h-full object-cover" />
+                  {note.cover ? (
+                    <img src={note.cover} alt={note.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <FileText className="w-5 h-5 text-[#9BA8A3]" />
@@ -450,36 +410,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-
-      {/* 最新评论 */}
-      {recentComments.length > 0 && (
-        <div className="bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <h2 className="text-base font-bold text-[#1A2421] mb-4 font-serif">最新评论</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {recentComments.slice(0, 6).map((comment) => (
-              <div 
-                key={comment.id}
-                className="flex gap-3 p-3 rounded-xl bg-[#FDFBF7] border border-[#2D4B3E]/5"
-              >
-                {comment.user_avatar ? (
-                  <img src={comment.user_avatar} alt={comment.user_nickname} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-[#F4F6F0] flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-xs font-bold text-[#1A2421] truncate">{comment.user_nickname}</span>
-                    {comment.ip_location && <span className="text-[10px] text-[#9BA8A3]">{comment.ip_location}</span>}
-                  </div>
-                  <p className="text-xs text-[#6B7A74] line-clamp-2">{comment.content}</p>
-                  {comment.created_at && <p className="text-[10px] text-[#9BA8A3] mt-1">{formatTime(comment.created_at)}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 粉丝画像 */}
       <div className="bg-white rounded-[2rem] p-5 border border-[#2D4B3E]/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
