@@ -101,15 +101,21 @@ export async function POST() {
       allNotes = allNotes.concat(pageNotes)
       pageCount++
       
-      // 获取下一页游标
-      if (notesResult.cursor && pageNotes.length >= 20) {
-        cursor = notesResult.cursor
+      // 检查是否有更多数据
+      const hasMore = notesResult.has_more
+      
+      // 使用最后一条笔记的 cursor 作为下一页参数
+      const lastNote = pageNotes[pageNotes.length - 1]
+      const nextCursor = lastNote?.cursor || lastNote?.id
+      
+      if (hasMore && nextCursor && pageNotes.length >= 20) {
+        cursor = nextCursor
       } else {
         break // 没有更多数据
       }
       
       // 短暂延迟避免请求过快
-      await new Promise(r => setTimeout(r, 200))
+      await new Promise(r => setTimeout(r, 300))
     }
     
     const notes = allNotes
