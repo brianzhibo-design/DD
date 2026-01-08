@@ -118,12 +118,30 @@ export async function POST() {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
     console.log(`[同步完成] 耗时:${duration}s`)
 
+    // 同步后获取最新账号信息
+    const { data: latestAccount } = await supabase
+      .from('account_info')
+      .select('*')
+      .order('synced_at', { ascending: false })
+      .limit(1)
+    
+    const dbAccount = latestAccount?.[0]
+    const account = dbAccount ? {
+      nickname: dbAccount.nickname,
+      fans: dbAccount.followers,
+      total_likes: dbAccount.total_likes,
+      total_collected: dbAccount.total_collects,
+      notes_count: dbAccount.notes_count
+    } : null
+
     return NextResponse.json({ 
       success: true, 
       message: '同步完成',
       data: {
-        accountSaved,
-        notesSaved,
+        account,
+        stats: {
+          savedNotes: notesSaved
+        },
         duration: `${duration}s`
       }
     })
@@ -168,10 +186,26 @@ export async function GET() {
         .limit(1)
     ])
 
+    // 转换账号数据字段名以匹配前端期望
+    const dbAccount = accountRes.data?.[0]
+    const account = dbAccount ? {
+      nickname: dbAccount.nickname,
+      red_id: dbAccount.user_id,
+      avatar: dbAccount.avatar,
+      description: '',
+      ip_location: '',
+      fans: dbAccount.followers,
+      follows: dbAccount.following,
+      total_likes: dbAccount.total_likes,
+      total_collected: dbAccount.total_collects,
+      notes_count: dbAccount.notes_count,
+      updated_at: dbAccount.synced_at
+    } : null
+
     return NextResponse.json({
       configured: !!(process.env.ONEAPI_KEY && process.env.XHS_USER_ID),
       data: {
-        account: accountRes.data?.[0] || null,
+        account,
         topNotes: notesRes.data || [],
         latestStats: statsRes.data?.[0] || null
       }
