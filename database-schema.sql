@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS account_info (
   avatar_large TEXT,
   
   -- 简介（兼容多个字段名）
-  desc TEXT,
+  "desc" TEXT,
   description TEXT,
   
   -- 位置
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS notes (
   -- 基础信息
   title TEXT,
   display_title TEXT,
-  desc TEXT,
+  "desc" TEXT,
   type VARCHAR(20) DEFAULT '图文',
   
   -- 封面和媒体（兼容多个字段名）
