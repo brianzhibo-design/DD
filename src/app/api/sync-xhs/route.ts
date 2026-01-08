@@ -189,27 +189,44 @@ export async function GET() {
         .limit(1)
     ])
 
-    // 转换账号数据字段名以匹配前端期望
+    // 调试日志
+    console.log('[GET] account_info:', accountRes.error?.message || `找到 ${accountRes.data?.length || 0} 条`)
+    console.log('[GET] notes:', notesRes.error?.message || `找到 ${notesRes.data?.length || 0} 条`)
+
+    // 转换账号数据字段名以匹配前端期望（兼容新旧表结构）
     const dbAccount = accountRes.data?.[0]
     const account = dbAccount ? {
       nickname: dbAccount.nickname,
-      red_id: dbAccount.red_id || dbAccount.user_id,
-      avatar: dbAccount.avatar,
-      description: dbAccount.description || '',
+      red_id: dbAccount.red_id || dbAccount.user_id || '',
+      avatar: dbAccount.avatar || dbAccount.images || '',
+      description: dbAccount.description || dbAccount.desc || '',
       ip_location: dbAccount.ip_location || '',
-      fans: dbAccount.followers,
-      follows: dbAccount.following,
-      total_likes: dbAccount.total_likes,
-      total_collected: dbAccount.total_collects,
-      notes_count: dbAccount.notes_count,
-      updated_at: dbAccount.synced_at
+      // 兼容新旧字段名
+      fans: dbAccount.followers || dbAccount.fans || 0,
+      follows: dbAccount.following || dbAccount.follows || 0,
+      total_likes: dbAccount.total_likes || dbAccount.liked || 0,
+      total_collected: dbAccount.total_collects || dbAccount.total_collected || dbAccount.collected || 0,
+      notes_count: dbAccount.notes_count || dbAccount.ndiscovery || 0,
+      updated_at: dbAccount.synced_at || dbAccount.updated_at || ''
     } : null
+
+    // 转换笔记数据以兼容前端期望的字段名
+    const topNotes = (notesRes.data || []).map((note: any) => ({
+      note_id: note.note_id || note.id,
+      title: note.title || '',
+      type: note.type || '图文',
+      likes: note.likes || 0,
+      collects: note.collects || note.collected_count || 0,
+      comments: note.comments || note.comments_count || 0,
+      cover: note.cover || note.cover_image || '',
+      publish_time: note.publish_time || note.publish_date || ''
+    }))
 
     return NextResponse.json({
       configured: !!(process.env.ONEAPI_KEY && process.env.XHS_USER_ID),
       data: {
         account,
-        topNotes: notesRes.data || [],
+        topNotes,
         latestStats: statsRes.data?.[0] || null
       }
     })
