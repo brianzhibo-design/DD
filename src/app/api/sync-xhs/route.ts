@@ -83,12 +83,37 @@ export async function POST() {
       console.error('[sync-xhs] 账号保存失败:', accountError.message)
     }
 
-    // ========== 2. 获取笔记列表 ==========
-    const notesResult = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', { 
-      userId: XHS_USER_ID 
-    })
+    // ========== 2. 获取笔记列表（分页获取全部） ==========
+    let allNotes: any[] = []
+    let cursor = ''
+    let pageCount = 0
+    const maxPages = 10 // 最多获取10页，防止死循环
     
-    const notes = notesResult.notes || []
+    while (pageCount < maxPages) {
+      const params: any = { userId: XHS_USER_ID }
+      if (cursor) params.cursor = cursor
+      
+      const notesResult = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', params)
+      const pageNotes = notesResult.notes || []
+      
+      if (pageNotes.length === 0) break
+      
+      allNotes = allNotes.concat(pageNotes)
+      pageCount++
+      
+      // 获取下一页游标
+      if (notesResult.cursor && pageNotes.length >= 20) {
+        cursor = notesResult.cursor
+      } else {
+        break // 没有更多数据
+      }
+      
+      // 短暂延迟避免请求过快
+      await new Promise(r => setTimeout(r, 200))
+    }
+    
+    const notes = allNotes
+    console.log(`[sync-xhs] 获取到 ${notes.length} 篇笔记，共 ${pageCount} 页`)
     
     // 保存完整笔记列表数据
     const notesData = notes.map((note: any) => {
