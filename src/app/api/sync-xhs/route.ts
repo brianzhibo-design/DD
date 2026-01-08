@@ -51,19 +51,15 @@ export async function POST() {
     
     const userData = userResult.data || userResult
     
-    // 保存完整账号信息（兼容新旧表结构）
+    // 保存账号信息
     const accountData = {
       id: 'main',
       user_id: XHS_USER_ID,
       nickname: userData.nickname || '',
       red_id: userData.red_id || '',
       avatar: userData.images || userData.image || '',
-      avatar_large: userData.imageb || '',
-      desc: userData.desc || '',
       description: userData.desc || '',
       ip_location: userData.ip_location || '',
-      gender: userData.gender || 0,
-      // 兼容新旧字段
       fans: parseInt(userData.fans) || 0,
       followers: parseInt(userData.fans) || 0,
       follows: parseInt(userData.follows) || 0,
@@ -72,10 +68,6 @@ export async function POST() {
       total_liked: parseInt(userData.liked) || 0,
       total_collected: parseInt(userData.collected) || 0,
       notes_count: parseInt(userData.ndiscovery) || 0,
-      // 扩展信息
-      register_time_desc: userData.register_time_desc || '',
-      tags: userData.tags || [],
-      interactions: userData.interactions || [],
       raw_data: userData,
       updated_at: now,
       synced_at: now
@@ -90,7 +82,7 @@ export async function POST() {
     let allNotes: any[] = []
     let cursor = ''
     let pageCount = 0
-    const maxPages = 3 // 限制3页避免超时（Netlify免费版限制26秒）
+    const maxPages = 3
     
     while (pageCount < maxPages) {
       const params: any = { userId: XHS_USER_ID }
@@ -108,102 +100,50 @@ export async function POST() {
       allNotes = allNotes.concat(pageNotes)
       pageCount++
       
-      // 检查是否有更多数据
-      const hasMore = notesResult.has_more
-      
       // 使用最后一条笔记的 cursor 作为下一页参数
       const lastNote = pageNotes[pageNotes.length - 1]
       const nextCursor = lastNote?.cursor || lastNote?.id
       
-      console.log(`[sync-xhs] nextCursor: ${nextCursor}`)
-      
-      // hasMore 可能是 true/false 或 undefined，用 !== false 来判断
-      if (hasMore !== false && nextCursor && pageNotes.length >= 20) {
+      // hasMore !== false 表示还有更多数据
+      if (notesResult.has_more !== false && nextCursor && pageNotes.length >= 20) {
         cursor = nextCursor
       } else {
-        console.log(`[sync-xhs] 停止分页: hasMore=${hasMore}, nextCursor=${!!nextCursor}, len=${pageNotes.length}`)
-        break // 没有更多数据
+        break
       }
       
-      // 短暂延迟避免请求过快
       await new Promise(r => setTimeout(r, 100))
     }
     
     const notes = allNotes
-    console.log(`[sync-xhs] 获取到 ${notes.length} 篇笔记，共 ${pageCount} 页`)
+    console.log(`[sync-xhs] 总共获取 ${notes.length} 篇笔记，共 ${pageCount} 页`)
     
-    // 保存完整笔记列表数据
+    // 保存笔记数据
     const notesData = notes.map((note: any) => {
-      // 解析 widgets_context
-      let widgetsContext = null
-      if (note.widgets_context) {
-        try {
-          widgetsContext = typeof note.widgets_context === 'string' 
-            ? JSON.parse(note.widgets_context) 
-            : note.widgets_context
-        } catch (e) {
-          widgetsContext = null
-        }
-      }
-
+      const coverUrl = note.images_list?.[0]?.url_size_large || 
+                       note.images_list?.[0]?.url || 
+                       note.cover?.url || ''
+      
       return {
         id: note.cursor || note.id || note.note_id,
         user_id: XHS_USER_ID,
-        
-        // 基础信息
         title: note.title || '',
         display_title: note.display_title || '',
-        desc: note.desc || '',
         type: note.type === 'video' ? '视频' : '图文',
-        
-        // 封面和媒体（兼容旧字段）
-        cover_url: note.images_list?.[0]?.url_size_large || 
-                   note.images_list?.[0]?.url || 
-                   note.cover?.url || '',
-        cover_image: note.images_list?.[0]?.url_size_large || 
-                     note.images_list?.[0]?.url || 
-                     note.cover?.url || '',
-        cover_width: note.cover?.width || 0,
-        cover_height: note.cover?.height || 0,
-        video_url: note.video_info_v2?.media?.stream?.h264?.[0]?.master_url || '',
-        video_duration: note.video_info_v2?.capa?.duration || 0,
-        images_list: note.images_list || [],
-        
-        // 互动数据
+        cover_url: coverUrl,
+        cover_image: coverUrl,
         likes: parseInt(note.likes) || parseInt(note.liked_count) || 0,
         collects: parseInt(note.collected_count) || 0,
         comments: parseInt(note.comments_count) || 0,
         shares: parseInt(note.share_count) || 0,
-        views: parseInt(note.view_count) || 0,
-        
-        // 时间
         publish_time: note.time || null,
-        publish_date: note.time_desc || '',
         time_desc: note.time_desc || '',
-        
-        // 状态
-        sticky: note.sticky || false,
-        ip_location: note.ip_location || '',
-        
-        // 标签
-        hash_tags: note.hash_tag || [],
-        
-        // 用户信息
-        user_info: note.user || {},
-        
-        // 扩展
-        xsec_token: note.xsec_token || '',
-        cursor_id: note.cursor || '',
-        widgets_context: widgetsContext,
-        
-        // 原始数据
         raw_list_data: note,
-        
-        // 同步时间
         list_synced_at: now,
         updated_at: now
       }
     })
+
+    console.log(`[sync-xhs] 准备保存 ${notesData.length} 条笔记`)
 
     if (notesData.length > 0) {
       const { error: notesError } = await supabase.from('notes').upsert(notesData, { 
@@ -211,7 +151,9 @@ export async function POST() {
         ignoreDuplicates: false 
       })
       if (notesError) {
-        console.error('[sync-xhs] 笔记保存失败:', notesError.message)
+        console.error('[sync-xhs] 笔记保存失败:', notesError.message, notesError.details, notesError.hint)
+      } else {
+        console.log(`[sync-xhs] 笔记保存成功`)
       }
     }
 
@@ -225,8 +167,7 @@ export async function POST() {
       followers: accountData.followers,
       total_likes: accountData.total_liked,
       total_collects: accountData.total_collected,
-      posts_count: notes.length,
-      raw_data: { account: accountData.nickname, notes_count: notes.length }
+      posts_count: notes.length
     }, { onConflict: 'week_start' })
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
