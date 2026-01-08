@@ -62,6 +62,9 @@ export async function POST() {
         user_id: userId,
         nickname: user.nickname || '未知',
         avatar: user.images || '',
+        red_id: user.red_id || '',
+        description: user.desc || '',
+        ip_location: user.ip_location || '',
         followers: parseInt(user.fans) || 0,
         following: parseInt(user.follows) || 0,
         total_likes: parseInt(user.liked) || 0,
@@ -190,10 +193,10 @@ export async function GET() {
     const dbAccount = accountRes.data?.[0]
     const account = dbAccount ? {
       nickname: dbAccount.nickname,
-      red_id: dbAccount.user_id,
+      red_id: dbAccount.red_id || dbAccount.user_id,
       avatar: dbAccount.avatar,
-      description: '',
-      ip_location: '',
+      description: dbAccount.description || '',
+      ip_location: dbAccount.ip_location || '',
       fans: dbAccount.followers,
       follows: dbAccount.following,
       total_likes: dbAccount.total_likes,
