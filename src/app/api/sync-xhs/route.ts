@@ -86,11 +86,11 @@ export async function POST() {
       console.error('[sync-xhs] 账号保存失败:', accountError.message)
     }
 
-    // ========== 2. 获取笔记列表（分页获取全部） ==========
+    // ========== 2. 获取笔记列表（分页获取，最多3页=60条） ==========
     let allNotes: any[] = []
     let cursor = ''
     let pageCount = 0
-    const maxPages = 10 // 最多获取10页，防止死循环
+    const maxPages = 3 // 限制3页避免超时（Netlify免费版限制26秒）
     
     while (pageCount < maxPages) {
       const params: any = { userId: XHS_USER_ID }
@@ -118,7 +118,7 @@ export async function POST() {
       }
       
       // 短暂延迟避免请求过快
-      await new Promise(r => setTimeout(r, 300))
+      await new Promise(r => setTimeout(r, 100))
     }
     
     const notes = allNotes
