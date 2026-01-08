@@ -13,40 +13,29 @@ interface AccountInfo {
   nickname: string
   red_id: string
   avatar: string
-  description: string
+  desc: string
   ip_location: string
-  fans: number
-  follows: number
-  total_likes: number
+  followers: number
+  following: number
+  total_liked: number
   total_collected: number
   notes_count: number
-  updated_at: string
-}
-
-interface WeeklyStats {
-  followers: number
-  new_followers: number
-  likes: number
-  saves: number
-  comments: number
-  female_ratio: number
+  synced_at: string
 }
 
 interface Note {
-  note_id: string
+  id: string
   title: string
   type: string
   likes: number
   collects: number
   comments: number
-  cover: string
-  publish_time: string
+  cover_url: string
+  publish_time: number
 }
-
 
 export default function HomePage() {
   const [account, setAccount] = useState<AccountInfo | null>(null)
-  const [stats, setStats] = useState<WeeklyStats | null>(null)
   const [topNotes, setTopNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -54,12 +43,20 @@ export default function HomePage() {
 
   const loadData = async () => {
     try {
-      const res = await fetch('/api/sync-xhs')
-      const data = await res.json()
-      if (data.data) {
-        setAccount(data.data.account)
-        setStats(data.data.latestStats)
-        setTopNotes(data.data.topNotes || [])
+      // 并行获取账号信息和笔记列表
+      const [accountRes, notesRes] = await Promise.all([
+        fetch('/api/account'),
+        fetch('/api/notes?sort=likes&limit=10')
+      ])
+      
+      const accountData = await accountRes.json()
+      const notesData = await notesRes.json()
+      
+      if (accountData.account) {
+        setAccount(accountData.account)
+      }
+      if (notesData.notes) {
+        setTopNotes(notesData.notes)
       }
     } catch (e) {
       console.error('加载失败:', e)
@@ -75,9 +72,9 @@ export default function HomePage() {
       if (data.success) {
         await loadData()
         const duration = data.data?.duration || ''
-        const fans = data.data?.account?.fans || 0
-        const notes = data.data?.stats?.savedNotes || 0
-        alert(`✅ 同步成功！${duration ? `(${duration})` : ''}\n\n粉丝: ${formatNum(fans)}\n笔记: ${notes} 篇`)
+        const nickname = data.data?.nickname || ''
+        const notesCount = data.data?.notesCount || 0
+        alert(`✅ 同步成功！${duration ? `(${duration})` : ''}\n\n${nickname}\n笔记: ${notesCount} 篇`)
       } else {
         alert('❌ 同步失败: ' + data.error)
       }
@@ -103,20 +100,20 @@ export default function HomePage() {
     })
   }
 
-  const collectRate = account?.total_likes 
-    ? ((account.total_collected / account.total_likes) * 100).toFixed(1) 
+  const collectRate = account?.total_liked 
+    ? ((account.total_collected / account.total_liked) * 100).toFixed(1) 
     : '0'
 
-  const interactRate = account?.fans 
-    ? (((account.total_likes + account.total_collected) / account.fans) * 100).toFixed(0) 
+  const interactRate = account?.followers 
+    ? (((account.total_liked + account.total_collected) / account.followers) * 100).toFixed(0) 
     : '0'
 
-  const fanLikeRatio = account?.fans && account?.total_likes 
-    ? (account.total_likes / account.fans).toFixed(1) 
+  const fanLikeRatio = account?.followers && account?.total_liked 
+    ? (account.total_liked / account.followers).toFixed(1) 
     : '0'
 
-  const avgLikes = account?.notes_count && account?.total_likes 
-    ? Math.round(account.total_likes / account.notes_count) 
+  const avgLikes = account?.notes_count && account?.total_liked 
+    ? Math.round(account.total_liked / account.notes_count) 
     : 0
   const avgCollects = account?.notes_count && account?.total_collected 
     ? Math.round(account.total_collected / account.notes_count) 
@@ -200,10 +197,10 @@ export default function HomePage() {
           </div>
           
           <div className="flex items-center gap-2">
-            {account?.updated_at && (
+            {account?.synced_at && (
               <span className="text-xs text-[#9BA8A3] hidden md:flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {formatTime(account.updated_at)}
+                {formatTime(account.synced_at)}
               </span>
             )}
             <button
@@ -232,16 +229,9 @@ export default function HomePage() {
               <span className="text-xs text-white/60 font-bold uppercase tracking-wider">粉丝总数</span>
             </div>
             <div className="text-3xl font-black font-serif mb-1">
-              {formatNum(account?.fans || 0)}
+              {formatNum(account?.followers || 0)}
             </div>
-            {stats?.new_followers && stats.new_followers > 0 ? (
-              <div className="flex items-center gap-1 text-emerald-300 text-xs">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-                本周 +{formatNum(stats.new_followers)}
-              </div>
-            ) : (
-              <div className="text-xs text-white/40">关注 {account?.follows || 0}</div>
-            )}
+            <div className="text-xs text-white/40">关注 {account?.following || 0}</div>
           </div>
         </div>
 
@@ -254,7 +244,7 @@ export default function HomePage() {
             <span className="text-xs text-[#6B7A74] font-bold uppercase tracking-wider">获赞总数</span>
           </div>
           <div className="text-3xl font-black text-[#1A2421] font-serif mb-1">
-            {formatNum(account?.total_likes || 0)}
+            {formatNum(account?.total_liked || 0)}
           </div>
           <div className="text-xs text-[#9BA8A3]">
             篇均 <span className="text-[#6B7A74] font-medium">{formatNum(avgLikes)}</span>
@@ -357,8 +347,8 @@ export default function HomePage() {
           <div className="space-y-2">
             {topNotes.length > 0 ? topNotes.slice(0, 5).map((note, index) => (
               <div 
-                key={note.note_id}
-                onClick={() => setSelectedNoteId(note.note_id)}
+                key={note.id}
+                onClick={() => setSelectedNoteId(note.id)}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#F4F6F0] transition-colors cursor-pointer"
               >
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -368,8 +358,8 @@ export default function HomePage() {
                 </div>
                 
                 <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 bg-[#F4F6F0]">
-                  {note.cover ? (
-                    <img src={note.cover} alt={note.title} className="w-full h-full object-cover" />
+                  {note.cover_url ? (
+                    <img src={note.cover_url} alt={note.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <FileText className="w-5 h-5 text-[#9BA8A3]" />
@@ -423,12 +413,12 @@ export default function HomePage() {
           <div className="h-3 bg-[#F4F6F0] rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full"
-              style={{ width: `${stats?.female_ratio || 85}%` }}
+              style={{ width: '85%' }}
             />
           </div>
           <div className="flex justify-between text-xs font-bold mt-2">
-            <span className="text-rose-500">{stats?.female_ratio || 85}%</span>
-            <span className="text-[#2D4B3E]">{100 - (stats?.female_ratio || 85)}%</span>
+            <span className="text-rose-500">85%</span>
+            <span className="text-[#2D4B3E]">15%</span>
           </div>
         </div>
         

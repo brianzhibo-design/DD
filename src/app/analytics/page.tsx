@@ -25,14 +25,14 @@ interface WeeklyStats {
 }
 
 interface Note {
-  note_id: string
+  id: string
   title: string
   type: string
   likes: number
   collects: number
   comments: number
-  cover: string
-  publish_time: string
+  cover_url: string
+  publish_time: number
 }
 
 const emptyWeeklyData: WeeklyStats = {
@@ -70,16 +70,22 @@ export default function AnalyticsPage() {
 
   const loadData = async () => {
     try {
-      const statsRes = await fetch('/api/weekly-stats')
+      const [statsRes, notesRes] = await Promise.all([
+        fetch('/api/weekly-stats'),
+        fetch('/api/notes?sort=likes&limit=50')
+      ])
+      
       const statsData = await statsRes.json()
-      if (statsData.success) {
-        setWeeklyData(statsData.data || [])
+      const notesData = await notesRes.json()
+      
+      if (statsData.data) {
+        setWeeklyData(statsData.data)
+      } else if (statsData.success && statsData.data) {
+        setWeeklyData(statsData.data)
       }
 
-      const notesRes = await fetch('/api/notes')
-      const notesData = await notesRes.json()
-      if (notesData.success) {
-        setNotes(notesData.data || [])
+      if (notesData.notes) {
+        setNotes(notesData.notes)
       }
     } catch (e) {
       console.error('加载数据失败:', e)
@@ -416,13 +422,13 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {notes.length > 0 ? notes.slice(0, 12).map((note) => (
             <div 
-              key={note.note_id}
-              onClick={() => setSelectedNoteId(note.note_id)}
+              key={note.id}
+              onClick={() => setSelectedNoteId(note.id)}
               className="flex gap-3 p-4 rounded-xl border border-[#2D4B3E]/5 hover:border-[#2D4B3E]/15 hover:shadow-md transition-all cursor-pointer bg-[#FDFBF7]"
             >
-              {note.cover ? (
+              {note.cover_url ? (
                 <img 
-                  src={note.cover} 
+                  src={note.cover_url} 
                   alt={note.title}
                   className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                 />
@@ -451,7 +457,7 @@ export default function AnalyticsPage() {
                   </span>
                 </div>
                 <div className="text-xs text-[#9BA8A3] mt-1">
-                  {note.type} · {note.publish_time ? new Date(note.publish_time).toLocaleDateString('zh-CN') : '-'}
+                  {note.type} · {note.publish_time ? new Date(note.publish_time * 1000).toLocaleDateString('zh-CN') : '-'}
                 </div>
               </div>
             </div>

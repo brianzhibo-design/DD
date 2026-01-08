@@ -1,26 +1,23 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-export const maxDuration = 30
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 const ONEAPI_BASE = 'https://api.getoneapi.com'
-
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  return createClient(url, key)
-}
+const ONEAPI_KEY = process.env.ONEAPI_KEY
+const XHS_USER_ID = process.env.XHS_USER_ID
 
 async function oneApiRequest(endpoint: string, body: object) {
-  const apiKey = process.env.ONEAPI_KEY
-  if (!apiKey) throw new Error('ONEAPI_KEY 未配置')
+  if (!ONEAPI_KEY) throw new Error('ONEAPI_KEY 未配置')
 
   const response = await fetch(`${ONEAPI_BASE}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'Authorization': `Bearer ${ONEAPI_KEY}`
     },
     body: JSON.stringify(body)
   })
@@ -34,210 +31,131 @@ async function oneApiRequest(endpoint: string, body: object) {
   return result.data
 }
 
-// 同步账号信息 + 笔记列表（快速，2-3秒完成）
 export async function POST() {
   const startTime = Date.now()
-  const supabase = getSupabase()
   
-  if (!supabase) {
-    return NextResponse.json({ success: false, error: 'Supabase 未配置' }, { status: 500 })
-  }
-
-  const userId = process.env.XHS_USER_ID
-  if (!userId) {
-    return NextResponse.json({ success: false, error: 'XHS_USER_ID 未配置' }, { status: 500 })
-  }
-
   try {
-    const now = new Date().toISOString()
-    let accountSaved = false
-    let notesSaved = 0
-    let accountError = ''
-    let notesError = ''
-    let accountData: any = null
-
-    // ========== 1. 获取账号信息 ==========
-    try {
-      const userData = await oneApiRequest('/api/xiaohongshu/fetch_user_data_v4', { userId })
-      const user = userData.data || userData
-
-      // 使用旧表结构字段名
-      accountData = {
-        id: 'main',  // 使用固定 ID 方便 upsert
-        nickname: user.nickname || '未知',
-        avatar: user.images || '',
-        red_id: user.red_id || '',
-        description: user.desc || '',
-        ip_location: user.ip_location || '',
-        fans: parseInt(user.fans) || 0,
-        follows: parseInt(user.follows) || 0,
-        total_likes: parseInt(user.liked) || 0,
-        total_collected: parseInt(user.collected) || 0,
-        notes_count: parseInt(user.ndiscovery) || 0,
-        updated_at: now
-      }
-
-      const { error } = await supabase.from('account_info').upsert(accountData, { onConflict: 'id' })
-      if (error) {
-        accountError = `保存失败: ${error.message} | ${error.hint || ''}`
-        console.error('[账号信息]', accountError)
-      } else {
-        accountSaved = true
-        console.log(`[账号信息] 保存成功: ${accountData.nickname} | 粉丝:${accountData.fans}`)
-      }
-    } catch (e: any) {
-      accountError = `获取失败: ${e.message}`
-      console.error('[账号信息]', accountError)
+    if (!XHS_USER_ID) {
+      return NextResponse.json({ error: '未配置 XHS_USER_ID' }, { status: 500 })
     }
+
+    // ========== 1. 获取用户信息 ==========
+    const userResult = await oneApiRequest('/api/xiaohongshu/fetch_user_data_v4', { 
+      userId: XHS_USER_ID 
+    })
+    
+    const userData = userResult.data || userResult
+    
+    // 保存账号信息
+    const accountData = {
+      user_id: XHS_USER_ID,
+      nickname: userData.nickname || '',
+      red_id: userData.red_id || '',
+      avatar: userData.images || userData.image || userData.avatar || '',
+      desc: userData.desc || '',
+      ip_location: userData.ip_location || '',
+      gender: userData.gender || 0,
+      followers: parseInt(userData.fans) || 0,
+      following: parseInt(userData.follows) || 0,
+      total_liked: parseInt(userData.liked) || 0,
+      total_collected: parseInt(userData.collected) || 0,
+      notes_count: parseInt(userData.ndiscovery) || 0,
+      raw_data: userData,
+      synced_at: new Date().toISOString()
+    }
+
+    await supabase.from('account_info').insert(accountData)
 
     // ========== 2. 获取笔记列表 ==========
-    try {
-      const notesData = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', { userId })
-      const notes = notesData.notes || []
-      
-      console.log(`[笔记列表] 获取到 ${notes.length} 篇笔记`)
+    const notesResult = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', { 
+      userId: XHS_USER_ID 
+    })
+    
+    const notes = notesResult.notes || []
+    
+    // 批量保存笔记
+    const notesData = notes.map((note: any) => ({
+      id: note.cursor || note.id || note.note_id,
+      user_id: XHS_USER_ID,
+      title: note.display_title || note.title || '',
+      desc: note.desc || '',
+      type: note.type === 'video' ? '视频' : '图文',
+      cover_url: note.images_list?.[0]?.url_size_large || 
+                 note.images_list?.[0]?.url || 
+                 note.cover?.url || '',
+      video_url: note.video_info_v2?.media?.stream?.h264?.[0]?.master_url || '',
+      likes: parseInt(note.likes) || parseInt(note.liked_count) || 0,
+      collects: parseInt(note.collected_count) || 0,
+      comments: parseInt(note.comments_count) || 0,
+      shares: parseInt(note.share_count) || 0,
+      publish_time: note.time || null,
+      xsec_token: note.xsec_token || '',
+      raw_data: note,
+      updated_at: new Date().toISOString()
+    }))
 
-      if (notes.length > 0) {
-        // 使用旧表结构字段名
-        const notesInsert = notes.map((note: any) => ({
-          id: note.cursor || note.id || note.note_id,
-          title: note.display_title || note.title || note.desc?.substring(0, 100) || '',
-          cover_image: note.images_list?.[0]?.url_size_large || 
-                       note.images_list?.[0]?.url || 
-                       note.cover?.url_default || '',
-          likes: parseInt(note.likes) || parseInt(note.liked_count) || 0,
-          collects: parseInt(note.collected_count) || 0,
-          comments: parseInt(note.comments_count) || 0,
-          type: note.type === 'video' ? '视频' : '图文',
-          publish_date: note.time_desc || null,
-          updated_at: now
-        }))
-
-        const { error } = await supabase.from('notes').upsert(notesInsert, { 
-          onConflict: 'id',
-          ignoreDuplicates: false 
-        })
-        
-        if (!error) {
-          notesSaved = notes.length
-        } else {
-          notesError = `保存失败: ${error.message} | ${error.hint || ''}`
-          console.error('[笔记保存]', notesError)
-        }
-      }
-    } catch (e: any) {
-      notesError = `获取失败: ${e.message}`
-      console.error('[笔记列表]', notesError)
+    if (notesData.length > 0) {
+      await supabase.from('notes').upsert(notesData, { 
+        onConflict: 'id',
+        ignoreDuplicates: false 
+      })
     }
 
+    // ========== 3. 更新周统计 ==========
+    const weekStart = getWeekStart(new Date())
+    const weekEnd = getWeekEnd(new Date())
+
+    await supabase.from('weekly_stats').upsert({
+      week_start: weekStart,
+      week_end: weekEnd,
+      followers: accountData.followers,
+      total_likes: accountData.total_liked,
+      total_collects: accountData.total_collected,
+      posts_count: notes.length
+    }, { onConflict: 'week_start' })
+
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-    console.log(`[同步完成] 耗时:${duration}s`)
 
-    // 同步后获取最新账号信息
-    const { data: latestAccount } = await supabase
-      .from('account_info')
-      .select('*')
-      .eq('id', 'main')
-      .limit(1)
-    
-    const dbAccount = latestAccount?.[0]
-    const account = dbAccount ? {
-      nickname: dbAccount.nickname,
-      fans: dbAccount.fans,
-      total_likes: dbAccount.total_likes,
-      total_collected: dbAccount.total_collected,
-      notes_count: dbAccount.notes_count
-    } : null
-
-    return NextResponse.json({ 
-      success: true, 
-      message: '同步完成',
+    return NextResponse.json({
+      success: true,
       data: {
-        account: account || accountData, // 如果从数据库获取失败，返回API获取的数据
-        stats: {
-          savedNotes: notesSaved,
-          accountSaved
-        },
-        duration: `${duration}s`,
-        errors: {
-          account: accountError || null,
-          notes: notesError || null
-        }
+        nickname: accountData.nickname,
+        followers: accountData.followers,
+        totalLikes: accountData.total_liked,
+        totalCollects: accountData.total_collected,
+        notesCount: notes.length,
+        duration: `${duration}s`
       }
     })
 
   } catch (error: any) {
-    console.error('[同步失败]', error)
+    console.error('[sync-xhs] 错误:', error)
     return NextResponse.json({ 
-      success: false, 
-      error: error.message 
+      error: error.message || '同步失败' 
     }, { status: 500 })
   }
 }
 
-// 获取最新数据
+function getWeekStart(date: Date): string {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+  d.setDate(diff)
+  return d.toISOString().split('T')[0]
+}
+
+function getWeekEnd(date: Date): string {
+  const start = new Date(getWeekStart(date))
+  start.setDate(start.getDate() + 6)
+  return start.toISOString().split('T')[0]
+}
+
 export async function GET() {
-  const supabase = getSupabase()
-  
-  if (!supabase) {
-    return NextResponse.json({ 
-      configured: false,
-      error: 'Supabase 未配置' 
-    })
-  }
-
-  try {
-    // 并行获取账号和笔记
-    const [accountRes, notesRes, statsRes] = await Promise.all([
-      supabase
-        .from('account_info')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1),
-      supabase
-        .from('notes')
-        .select('*')
-        .order('likes', { ascending: false })
-        .limit(10),
-      supabase
-        .from('weekly_stats')
-        .select('*')
-        .order('week_start', { ascending: false })
-        .limit(1)
-    ])
-
-    // 调试日志
-    console.log('[GET] account_info error:', accountRes.error?.message || 'none')
-    console.log('[GET] account_info data:', accountRes.data?.length || 0, '条')
-    console.log('[GET] notes:', notesRes.error?.message || `找到 ${notesRes.data?.length || 0} 条`)
-
-    // 获取第一条账号记录
-    const account = accountRes.data?.[0] || null
-
-    // 转换笔记数据字段名以匹配前端
-    const topNotes = (notesRes.data || []).map((note: any) => ({
-      note_id: note.id,
-      title: note.title || '',
-      type: note.type || '图文',
-      likes: note.likes || 0,
-      collects: note.collects || 0,
-      comments: note.comments || 0,
-      cover: note.cover_image || '',
-      publish_time: note.publish_date || ''
-    }))
-
-    return NextResponse.json({
-      configured: !!(process.env.ONEAPI_KEY && process.env.XHS_USER_ID),
-      data: {
-        account,
-        topNotes,
-        latestStats: statsRes.data?.[0] || null
-      }
-    })
-  } catch (e: any) {
-    return NextResponse.json({ 
-      configured: false,
-      error: e.message 
-    })
-  }
+  return NextResponse.json({ 
+    status: 'ok',
+    config: {
+      ONEAPI_KEY: ONEAPI_KEY ? '已配置' : '未配置',
+      XHS_USER_ID: XHS_USER_ID || '未配置'
+    }
+  })
 }
