@@ -3,10 +3,10 @@
 -- 在 Supabase SQL Editor 中执行
 -- ============================================
 
--- 删除旧表（如果需要重建）
--- DROP TABLE IF EXISTS notes CASCADE;
--- DROP TABLE IF EXISTS account_info CASCADE;
--- DROP TABLE IF EXISTS weekly_stats CASCADE;
+-- 删除旧表（重建表结构）
+DROP TABLE IF EXISTS notes CASCADE;
+DROP TABLE IF EXISTS account_info CASCADE;
+DROP TABLE IF EXISTS weekly_stats CASCADE;
 
 -- ============================================
 -- 1. 账号信息表
