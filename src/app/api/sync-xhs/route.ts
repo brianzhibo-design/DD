@@ -39,6 +39,8 @@ export async function POST() {
       return NextResponse.json({ error: '未配置 XHS_USER_ID' }, { status: 500 })
     }
 
+    const now = new Date().toISOString()
+
     // ========== 1. 获取用户信息 ==========
     const userResult = await oneApiRequest('/api/xiaohongshu/fetch_user_data_v4', { 
       userId: XHS_USER_ID 
@@ -46,16 +48,19 @@ export async function POST() {
     
     const userData = userResult.data || userResult
     
-    // 保存账号信息（兼容新旧表结构）
+    // 保存完整账号信息（兼容新旧表结构）
     const accountData = {
-      id: 'main',  // 固定ID用于upsert
+      id: 'main',
+      user_id: XHS_USER_ID,
       nickname: userData.nickname || '',
       red_id: userData.red_id || '',
-      avatar: userData.images || userData.image || userData.avatar || '',
-      description: userData.desc || '',
+      avatar: userData.images || userData.image || '',
+      avatar_large: userData.imageb || '',
       desc: userData.desc || '',
+      description: userData.desc || '',
       ip_location: userData.ip_location || '',
-      // 兼容新旧字段名
+      gender: userData.gender || 0,
+      // 兼容新旧字段
       fans: parseInt(userData.fans) || 0,
       followers: parseInt(userData.fans) || 0,
       follows: parseInt(userData.follows) || 0,
@@ -64,8 +69,13 @@ export async function POST() {
       total_liked: parseInt(userData.liked) || 0,
       total_collected: parseInt(userData.collected) || 0,
       notes_count: parseInt(userData.ndiscovery) || 0,
-      updated_at: new Date().toISOString(),
-      synced_at: new Date().toISOString()
+      // 扩展信息
+      register_time_desc: userData.register_time_desc || '',
+      tags: userData.tags || [],
+      interactions: userData.interactions || [],
+      raw_data: userData,
+      updated_at: now,
+      synced_at: now
     }
 
     const { error: accountError } = await supabase.from('account_info').upsert(accountData, { onConflict: 'id' })
@@ -80,32 +90,87 @@ export async function POST() {
     
     const notes = notesResult.notes || []
     
-    // 批量保存笔记
-    const notesData = notes.map((note: any) => ({
-      id: note.cursor || note.id || note.note_id,
-      user_id: XHS_USER_ID,
-      title: note.display_title || note.title || '',
-      desc: note.desc || '',
-      type: note.type === 'video' ? '视频' : '图文',
-      cover_url: note.images_list?.[0]?.url_size_large || 
-                 note.images_list?.[0]?.url || 
-                 note.cover?.url || '',
-      video_url: note.video_info_v2?.media?.stream?.h264?.[0]?.master_url || '',
-      likes: parseInt(note.likes) || parseInt(note.liked_count) || 0,
-      collects: parseInt(note.collected_count) || 0,
-      comments: parseInt(note.comments_count) || 0,
-      shares: parseInt(note.share_count) || 0,
-      publish_time: note.time || null,
-      xsec_token: note.xsec_token || '',
-      raw_data: note,
-      updated_at: new Date().toISOString()
-    }))
+    // 保存完整笔记列表数据
+    const notesData = notes.map((note: any) => {
+      // 解析 widgets_context
+      let widgetsContext = null
+      if (note.widgets_context) {
+        try {
+          widgetsContext = typeof note.widgets_context === 'string' 
+            ? JSON.parse(note.widgets_context) 
+            : note.widgets_context
+        } catch (e) {
+          widgetsContext = null
+        }
+      }
+
+      return {
+        id: note.cursor || note.id || note.note_id,
+        user_id: XHS_USER_ID,
+        
+        // 基础信息
+        title: note.title || '',
+        display_title: note.display_title || '',
+        desc: note.desc || '',
+        type: note.type === 'video' ? '视频' : '图文',
+        
+        // 封面和媒体（兼容旧字段）
+        cover_url: note.images_list?.[0]?.url_size_large || 
+                   note.images_list?.[0]?.url || 
+                   note.cover?.url || '',
+        cover_image: note.images_list?.[0]?.url_size_large || 
+                     note.images_list?.[0]?.url || 
+                     note.cover?.url || '',
+        cover_width: note.cover?.width || 0,
+        cover_height: note.cover?.height || 0,
+        video_url: note.video_info_v2?.media?.stream?.h264?.[0]?.master_url || '',
+        video_duration: note.video_info_v2?.capa?.duration || 0,
+        images_list: note.images_list || [],
+        
+        // 互动数据
+        likes: parseInt(note.likes) || parseInt(note.liked_count) || 0,
+        collects: parseInt(note.collected_count) || 0,
+        comments: parseInt(note.comments_count) || 0,
+        shares: parseInt(note.share_count) || 0,
+        views: parseInt(note.view_count) || 0,
+        
+        // 时间
+        publish_time: note.time || null,
+        publish_date: note.time_desc || '',
+        time_desc: note.time_desc || '',
+        
+        // 状态
+        sticky: note.sticky || false,
+        ip_location: note.ip_location || '',
+        
+        // 标签
+        hash_tags: note.hash_tag || [],
+        
+        // 用户信息
+        user_info: note.user || {},
+        
+        // 扩展
+        xsec_token: note.xsec_token || '',
+        cursor_id: note.cursor || '',
+        widgets_context: widgetsContext,
+        
+        // 原始数据
+        raw_list_data: note,
+        
+        // 同步时间
+        list_synced_at: now,
+        updated_at: now
+      }
+    })
 
     if (notesData.length > 0) {
-      await supabase.from('notes').upsert(notesData, { 
+      const { error: notesError } = await supabase.from('notes').upsert(notesData, { 
         onConflict: 'id',
         ignoreDuplicates: false 
       })
+      if (notesError) {
+        console.error('[sync-xhs] 笔记保存失败:', notesError.message)
+      }
     }
 
     // ========== 3. 更新周统计 ==========
@@ -118,7 +183,8 @@ export async function POST() {
       followers: accountData.followers,
       total_likes: accountData.total_liked,
       total_collects: accountData.total_collected,
-      posts_count: notes.length
+      posts_count: notes.length,
+      raw_data: { account: accountData.nickname, notes_count: notes.length }
     }, { onConflict: 'week_start' })
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -137,9 +203,7 @@ export async function POST() {
 
   } catch (error: any) {
     console.error('[sync-xhs] 错误:', error)
-    return NextResponse.json({ 
-      error: error.message || '同步失败' 
-    }, { status: 500 })
+    return NextResponse.json({ error: error.message || '同步失败' }, { status: 500 })
   }
 }
 

@@ -8,23 +8,36 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // 尝试按 synced_at 排序（新表结构）
-    let { data, error } = await supabase
+    // 尝试获取最新账号信息
+    const { data, error } = await supabase
       .from('account_info')
-      .select('*')
-      .order('synced_at', { ascending: false })
+      .select(`
+        id,
+        user_id,
+        nickname,
+        red_id,
+        avatar,
+        avatar_large,
+        desc,
+        description,
+        ip_location,
+        gender,
+        fans,
+        followers,
+        follows,
+        following,
+        total_likes,
+        total_liked,
+        total_collected,
+        notes_count,
+        register_time_desc,
+        tags,
+        interactions,
+        synced_at,
+        updated_at
+      `)
+      .order('synced_at', { ascending: false, nullsFirst: false })
       .limit(1)
-
-    // 如果失败，尝试按 updated_at 排序（旧表结构）
-    if (error) {
-      const result = await supabase
-        .from('account_info')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-      data = result.data
-      error = result.error
-    }
 
     if (error && error.code !== 'PGRST116') {
       console.error('[account] 查询错误:', error.message)
@@ -32,22 +45,28 @@ export async function GET() {
 
     const account = data?.[0] || null
     
-    // 兼容新旧字段名
-    if (account) {
-      return NextResponse.json({ 
-        account: {
-          ...account,
-          // 确保字段名兼容
-          followers: account.followers || account.fans || 0,
-          following: account.following || account.follows || 0,
-          total_liked: account.total_liked || account.total_likes || 0,
-          total_collected: account.total_collected || 0,
-          synced_at: account.synced_at || account.updated_at || ''
-        }
-      })
+    if (!account) {
+      return NextResponse.json({ account: null })
     }
 
-    return NextResponse.json({ account: null })
+    // 格式化输出，确保字段名一致
+    return NextResponse.json({ 
+      account: {
+        ...account,
+        // 确保核心字段存在
+        nickname: account.nickname || '',
+        red_id: account.red_id || '',
+        avatar: account.avatar || account.avatar_large || '',
+        desc: account.desc || account.description || '',
+        ip_location: account.ip_location || '',
+        followers: account.followers || account.fans || 0,
+        following: account.following || account.follows || 0,
+        total_liked: account.total_liked || account.total_likes || 0,
+        total_collected: account.total_collected || 0,
+        notes_count: account.notes_count || 0,
+        synced_at: account.synced_at || account.updated_at || ''
+      }
+    })
 
   } catch (error: any) {
     console.error('[account] 错误:', error)

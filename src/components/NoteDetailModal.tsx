@@ -17,21 +17,29 @@ interface NoteDetail {
   share_count?: number
   type: string
   time: number
+  time_desc?: string
   ip_location?: string
+  cover_url?: string
   images_list?: Array<{
     url?: string
     original?: string
     url_size_large?: string
   }>
-  video_info_v2?: {
+  video?: {
     image?: {
       thumbnail?: string
     }
   }
+  video_url?: string
+  hash_tags?: Array<{
+    name?: string
+    id?: string
+  }>
   user?: {
     nickname: string
     images: string
   }
+  detail_synced_at?: string
 }
 
 export default function NoteDetailModal({ noteId, onClose }: NoteDetailModalProps) {
@@ -209,10 +217,10 @@ export default function NoteDetailModal({ noteId, onClose }: NoteDetailModalProp
               )}
 
               {/* 视频缩略图 */}
-              {note.video_info_v2?.image?.thumbnail && (
+              {(note.video?.image?.thumbnail || (note.type === '视频' && note.cover_url)) && (
                 <div className="relative">
                   <img 
-                    src={note.video_info_v2.image.thumbnail}
+                    src={note.video?.image?.thumbnail || note.cover_url}
                     alt="视频封面"
                     className="rounded-xl w-full h-64 object-cover bg-gray-100"
                   />
@@ -221,6 +229,17 @@ export default function NoteDetailModal({ noteId, onClose }: NoteDetailModalProp
                       <div className="w-0 h-0 border-l-[24px] border-l-white border-y-[14px] border-y-transparent ml-1"></div>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* 话题标签 */}
+              {note.hash_tags && note.hash_tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {note.hash_tags.slice(0, 10).map((tag, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-[#2D4B3E]/5 text-[#2D4B3E] text-sm rounded-full">
+                      #{tag.name || tag}
+                    </span>
+                  ))}
                 </div>
               )}
               
