@@ -52,6 +52,9 @@ export async function POST() {
     const now = new Date().toISOString()
     let accountSaved = false
     let notesSaved = 0
+    let accountError = ''
+    let notesError = ''
+    let accountData: any = null
 
     // ========== 1. 获取账号信息 ==========
     try {
@@ -59,7 +62,7 @@ export async function POST() {
       const user = userData.data || userData
 
       // 使用旧表结构字段名
-      const accountData = {
+      accountData = {
         id: 'main',  // 使用固定 ID 方便 upsert
         nickname: user.nickname || '未知',
         avatar: user.images || '',
@@ -76,13 +79,15 @@ export async function POST() {
 
       const { error } = await supabase.from('account_info').upsert(accountData, { onConflict: 'id' })
       if (error) {
-        console.error('[账号信息] 保存失败:', error.message, error.details, error.hint)
+        accountError = `保存失败: ${error.message} | ${error.hint || ''}`
+        console.error('[账号信息]', accountError)
       } else {
         accountSaved = true
         console.log(`[账号信息] 保存成功: ${accountData.nickname} | 粉丝:${accountData.fans}`)
       }
     } catch (e: any) {
-      console.error('[账号信息] 获取失败:', e.message)
+      accountError = `获取失败: ${e.message}`
+      console.error('[账号信息]', accountError)
     }
 
     // ========== 2. 获取笔记列表 ==========
@@ -116,11 +121,13 @@ export async function POST() {
         if (!error) {
           notesSaved = notes.length
         } else {
-          console.error('[笔记保存] 错误:', error.message)
+          notesError = `保存失败: ${error.message} | ${error.hint || ''}`
+          console.error('[笔记保存]', notesError)
         }
       }
     } catch (e: any) {
-      console.error('[笔记列表] 获取失败:', e.message)
+      notesError = `获取失败: ${e.message}`
+      console.error('[笔记列表]', notesError)
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -130,15 +137,15 @@ export async function POST() {
     const { data: latestAccount } = await supabase
       .from('account_info')
       .select('*')
-      .order('synced_at', { ascending: false })
+      .eq('id', 'main')
       .limit(1)
     
     const dbAccount = latestAccount?.[0]
     const account = dbAccount ? {
       nickname: dbAccount.nickname,
-      fans: dbAccount.followers,
+      fans: dbAccount.fans,
       total_likes: dbAccount.total_likes,
-      total_collected: dbAccount.total_collects,
+      total_collected: dbAccount.total_collected,
       notes_count: dbAccount.notes_count
     } : null
 
@@ -146,11 +153,16 @@ export async function POST() {
       success: true, 
       message: '同步完成',
       data: {
-        account,
+        account: account || accountData, // 如果从数据库获取失败，返回API获取的数据
         stats: {
-          savedNotes: notesSaved
+          savedNotes: notesSaved,
+          accountSaved
         },
-        duration: `${duration}s`
+        duration: `${duration}s`,
+        errors: {
+          account: accountError || null,
+          notes: notesError || null
+        }
       }
     })
 
