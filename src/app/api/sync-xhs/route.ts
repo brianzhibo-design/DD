@@ -117,7 +117,8 @@ export async function POST() {
       
       console.log(`[sync-xhs] nextCursor: ${nextCursor}`)
       
-      if (hasMore && nextCursor && pageNotes.length >= 20) {
+      // hasMore 可能是 true/false 或 undefined，用 !== false 来判断
+      if (hasMore !== false && nextCursor && pageNotes.length >= 20) {
         cursor = nextCursor
       } else {
         console.log(`[sync-xhs] 停止分页: hasMore=${hasMore}, nextCursor=${!!nextCursor}, len=${pageNotes.length}`)
