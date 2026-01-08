@@ -91,12 +91,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // 获取需要更新详情的笔记（按更新时间排序，取最旧的5篇）
+    // 获取需要更新详情的笔记（每次只处理2篇，避免超时）
     const { data: notes, error: fetchError } = await supabase
       .from('notes')
       .select('id, title')
       .order('updated_at', { ascending: true })
-      .limit(5)
+      .limit(2)
 
     if (fetchError || !notes?.length) {
       return NextResponse.json({ 
@@ -114,15 +114,18 @@ export async function POST(request: NextRequest) {
     for (const note of notes) {
       const noteId = note.id
       
+      // 提前检查超时（留20秒安全边界）
+      if (Date.now() - startTime > 40000) {
+        console.log('[详情同步] 接近超时，提前结束')
+        break
+      }
+      
       try {
-        // 获取笔记详情（带备用版本）
+        // 获取笔记详情（不重试，快速失败）
         const detailResult = await oneApiRequest(
           '/api/xiaohongshu/fetch_video_detail_v6', 
           { noteId },
-          { 
-            maxRetries: 2,
-            alternativeEndpoints: ['/api/xiaohongshu/fetch_video_detail_v5'] 
-          }
+          { maxRetries: 1 }
         )
         const noteDetail = detailResult.note_list?.[0] || detailResult
 
@@ -155,17 +158,18 @@ export async function POST(request: NextRequest) {
 
           processedNotes++
 
-          // 如果有评论，获取评论
-          if (comments > 0) {
+          // 如果有评论，获取评论（只获取前5条，减少处理时间）
+          if (comments > 0 && Date.now() - startTime < 35000) {
             try {
-              const commentsResult = await oneApiRequest('/api/xiaohongshu/fetch_video_comment', { 
-                noteId, 
-                sort: '1'
-              })
+              const commentsResult = await oneApiRequest(
+                '/api/xiaohongshu/fetch_video_comment', 
+                { noteId, sort: '1' },
+                { maxRetries: 1 }
+              )
               
               const commentsList = commentsResult.comments || []
               
-              for (const comment of commentsList.slice(0, 10)) {
+              for (const comment of commentsList.slice(0, 5)) {
                 const { error: commentError } = await supabase.from('note_comments').upsert({
                   id: comment.id,
                   note_id: noteId,
@@ -188,17 +192,15 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 避免请求过快
-        await new Promise(r => setTimeout(r, 200))
+        // 短暂延迟
+        await new Promise(r => setTimeout(r, 100))
 
       } catch (e: any) {
         console.log(`[笔记详情] 获取 ${noteId} 失败: ${e.message}`)
-      }
-
-      // 检查是否快超时（55秒安全边界）
-      if (Date.now() - startTime > 55000) {
-        console.log('[详情同步] 接近超时，停止处理')
-        break
+        // 失败也更新时间，避免卡住
+        await supabase.from('notes').update({
+          updated_at: new Date().toISOString()
+        }).eq('id', noteId)
       }
     }
 
