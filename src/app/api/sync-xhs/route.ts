@@ -46,25 +46,32 @@ export async function POST() {
     
     const userData = userResult.data || userResult
     
-    // 保存账号信息
+    // 保存账号信息（兼容新旧表结构）
     const accountData = {
-      user_id: XHS_USER_ID,
+      id: 'main',  // 固定ID用于upsert
       nickname: userData.nickname || '',
       red_id: userData.red_id || '',
       avatar: userData.images || userData.image || userData.avatar || '',
+      description: userData.desc || '',
       desc: userData.desc || '',
       ip_location: userData.ip_location || '',
-      gender: userData.gender || 0,
+      // 兼容新旧字段名
+      fans: parseInt(userData.fans) || 0,
       followers: parseInt(userData.fans) || 0,
+      follows: parseInt(userData.follows) || 0,
       following: parseInt(userData.follows) || 0,
+      total_likes: parseInt(userData.liked) || 0,
       total_liked: parseInt(userData.liked) || 0,
       total_collected: parseInt(userData.collected) || 0,
       notes_count: parseInt(userData.ndiscovery) || 0,
-      raw_data: userData,
+      updated_at: new Date().toISOString(),
       synced_at: new Date().toISOString()
     }
 
-    await supabase.from('account_info').insert(accountData)
+    const { error: accountError } = await supabase.from('account_info').upsert(accountData, { onConflict: 'id' })
+    if (accountError) {
+      console.error('[sync-xhs] 账号保存失败:', accountError.message)
+    }
 
     // ========== 2. 获取笔记列表 ==========
     const notesResult = await oneApiRequest('/api/xiaohongshu/fetch_user_video_list', { 
