@@ -258,9 +258,11 @@ export async function POST(request: NextRequest) {
 
 // ============ 获取已存储的数据 ============
 export async function GET() {
+  const configured = !!(process.env.ONEAPI_KEY && process.env.XHS_USER_ID)
+  
   const supabase = getSupabase()
   if (!supabase) {
-    return NextResponse.json({ status: 'ok', data: null })
+    return NextResponse.json({ status: 'ok', configured, data: null })
   }
 
   try {
@@ -274,6 +276,7 @@ export async function GET() {
 
     return NextResponse.json({ 
       status: 'ok',
+      configured: !!(process.env.ONEAPI_KEY && process.env.XHS_USER_ID),
       data: {
         account: accountRes.data?.[0] || null,
         latestStats: statsRes.data?.[0] || null,
@@ -286,7 +289,7 @@ export async function GET() {
       }
     })
   } catch (e) {
-    return NextResponse.json({ status: 'ok', data: null })
+    return NextResponse.json({ status: 'ok', configured, data: null })
   }
 }
 
